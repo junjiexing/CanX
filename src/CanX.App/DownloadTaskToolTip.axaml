@@ -1,0 +1,67 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<ToolTip
+    x:Class="CanX.App.DownloadTaskToolTip"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:CanX.App.Controls"
+    xmlns:vm="using:CanX.App.ViewModels"
+    x:DataType="vm:DownloadTaskRowViewModel"
+    Background="Transparent"
+    BorderThickness="0"
+    CornerRadius="0"
+    IsHitTestVisible="False">
+  <ToolTip.Template>
+    <ControlTemplate>
+      <Border
+          Margin="8"
+          Padding="12"
+          Background="{DynamicResource CanXPanelBrush}"
+          BorderBrush="{DynamicResource CanXBorderBrush}"
+          BorderThickness="1"
+          CornerRadius="0">
+        <ContentPresenter
+            Content="{TemplateBinding Content}"
+            ContentTemplate="{TemplateBinding ContentTemplate}"
+            HorizontalContentAlignment="Stretch"
+            VerticalContentAlignment="Stretch" />
+      </Border>
+    </ControlTemplate>
+  </ToolTip.Template>
+  <Grid Width="500" RowDefinitions="Auto,5,Auto,4,Auto,4,Auto,10,Auto,6,Auto">
+    <TextBlock
+        HorizontalAlignment="Stretch"
+        FontSize="14"
+        FontWeight="SemiBold"
+        Text="{Binding Name}"
+        TextWrapping="Wrap" />
+    <TextBlock Grid.Row="2" Text="{Binding TooltipStatusSummary}" />
+    <TextBlock Grid.Row="4" Foreground="{DynamicResource CanXMutedTextBrush}" Text="{Binding TooltipTransferSummary}" />
+    <TextBlock
+        Grid.Row="6"
+        HorizontalAlignment="Stretch"
+        Foreground="{DynamicResource CanXMutedTextBrush}"
+        Text="{Binding TooltipIdentitySummary}"
+        TextWrapping="Wrap" />
+    <Grid Grid.Row="8">
+      <ProgressBar
+          Height="12"
+          VerticalAlignment="Center"
+          Minimum="0"
+          Maximum="100"
+          IsVisible="{Binding !HasPieceMap}"
+          Value="{Binding Progress}" />
+      <controls:DownloadPieceMap
+          Height="54"
+          Bitfield="{Binding Snapshot.Bitfield}"
+          CompletedBrush="{DynamicResource CanXAccentBrush}"
+          IsVisible="{Binding HasPieceMap}"
+          MissingBrush="{DynamicResource CanXSubtleBrush}"
+          PartialBrush="{DynamicResource CanXMutedTextBrush}"
+          PieceCount="{Binding Snapshot.PieceCount}" />
+    </Grid>
+    <TextBlock
+        Grid.Row="10"
+        Foreground="{DynamicResource CanXMutedTextBrush}"
+        Text="{Binding PieceSummary}" />
+  </Grid>
+</ToolTip>

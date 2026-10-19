@@ -1,0 +1,63 @@
+{
+  "name": "canx-windows-native-dependencies",
+  "version-string": "1",
+  "builtin-baseline": "a1cae005c39be7b18ba319fced856b68d7276271",
+  "supports": "windows & x64",
+  "dependencies": [
+    "c-ares",
+    "egl-registry",
+    {
+      "name": "ffmpeg",
+      "default-features": false,
+      "features": [
+        "amf",
+        "ass",
+        "avcodec",
+        "avdevice",
+        "avfilter",
+        "avformat",
+        "dav1d",
+        "drawtext",
+        "fontconfig",
+        "freetype",
+        "fribidi",
+        "gpl",
+        "iconv",
+        "nvcodec",
+        "opencl",
+        "openjpeg",
+        "openssl",
+        "opus",
+        "qsv",
+        "swresample",
+        "swscale",
+        "version3",
+        "vorbis",
+        "vpx",
+        "vulkan",
+        "zlib"
+      ]
+    },
+    {
+      "name": "lcms",
+      "features": [ "fastfloat" ]
+    },
+    "libarchive",
+    "libjpeg-turbo",
+    {
+      "name": "libssh2",
+      "features": [ "openssl", "zlib" ]
+    },
+    "luajit",
+    "mujs",
+    "shaderc",
+    "spirv-cross",
+    {
+      "name": "sqlite3",
+      "features": [ "json1" ]
+    },
+    "uchardet",
+    "vulkan-loader",
+    "zlib"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "manifestVersion": 1,
+  "id": "org.canx.search.internet-archive",
+  "name": "Internet Archive Torrent Search",
+  "description": "Headless search service for torrents of openly accessible Internet Archive items.",
+  "version": "1.2.0",
+  "apiVersion": "2.0",
+  "entry": "dist/main.js",
+  "configuration": { "title": "Internet Archive 设置" },
+  "permissions": [
+    { "capability": "services.provide", "scopes": ["org.canx.bittorrent.search"] },
+    { "capability": "http", "scopes": ["archive.org", "*.archive.org", "127.0.0.1"] },
+    { "capability": "ui.configuration" },
+    { "capability": "storage" }
+  ]
+}

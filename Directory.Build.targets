@@ -1,0 +1,65 @@
+<Project>
+  <!-- Test assemblies need access to internals while compiling tests, but
+       production publish outputs do not need their friend-assembly metadata. -->
+  <ItemGroup Condition="'$(CanXProductionPublish)' == 'true'">
+    <InternalsVisibleTo Remove="CanX.Foundation.Tests;CanX.Plugins.Tests;CanX.Agent.Tests" />
+  </ItemGroup>
+
+  <!--
+    Release recipes pass pipe-delimited lists through these properties. A pipe
+    is used because MSBuild treats commas and semicolons in command-line
+    properties as property separators. Direct P/Invoke lets NativeAOT resolve
+    C ABI symbols from the final executable instead of loading a sidecar.
+  -->
+  <ItemGroup Condition="'$(PublishAot)' == 'true' and '$(CanXDirectPInvokeLibraries)' != ''">
+    <DirectPInvoke Include="$([System.String]::Copy('$(CanXDirectPInvokeLibraries)').Split('|'))" />
+    <NativeLibrary Include="$([System.String]::Copy('$(CanXStaticLibraries)').Split('|'))"
+                   Condition="'$(CanXStaticLibraries)' != ''" />
+    <NativeSystemLibrary Include="$([System.String]::Copy('$(CanXNativeSystemLibraries)').Split('|'))"
+                         Condition="'$(CanXNativeSystemLibraries)' != ''" />
+  </ItemGroup>
+
+  <!--
+    NativeAOT normally appends -lstdc++ after its runtime archives when
+    LinkStandardCPlusPlusLibrary is enabled. Replace that late dynamic lookup
+    with the explicit archive so C++ references introduced by either the app
+    or the NativeAOT runtime remain static.
+  -->
+  <Target Name="CanXUseStaticCxxRuntime"
+          BeforeTargets="LinkNative"
+          Condition="'$(PublishAot)' == 'true' and '$(CanXStaticCxxRuntime)' != ''">
+    <ItemGroup>
+      <LinkerArg Remove="-lstdc++" />
+      <LinkerArg Include="$(CanXStaticCxxRuntime)" />
+    </ItemGroup>
+  </Target>
+
+  <!--
+    The Windows NativeAOT release targets deliberately select the dynamic UCRT.
+    The static Windows release opts out so the final image does not import the
+    api-ms-win-crt-* contract libraries. Keep this opt-in because it overrides
+    a .NET SDK default and therefore needs to be exercised by the release audit.
+  -->
+  <Target Name="CanXUseStaticWindowsUcrt"
+          BeforeTargets="LinkNative"
+          Condition="'$(PublishAot)' == 'true' and '$(CanXStaticWindowsUcrt)' == 'true' and $([MSBuild]::IsOSPlatform('Windows'))">
+    <ItemGroup>
+      <LinkerArg Remove="/NODEFAULTLIB:libucrt.lib" />
+      <LinkerArg Remove="/DEFAULTLIB:ucrt.lib" />
+      <LinkerArg Include="/NODEFAULTLIB:ucrt.lib" />
+      <LinkerArg Include="/DEFAULTLIB:libucrt.lib" />
+    </ItemGroup>
+  </Target>
+
+  <!-- NuGet runtime assets are copied independently of DirectPInvoke. Once
+       their symbols are linked into the executable, remove only the explicitly
+       named sidecars from the publish directory. -->
+  <Target Name="CanXRemoveStaticallyLinkedNativeSidecars"
+          AfterTargets="Publish"
+          Condition="'$(PublishAot)' == 'true' and '$(CanXStaticNativeSidecars)' != ''">
+    <ItemGroup>
+      <_CanXStaticNativeSidecar Include="$([System.String]::Copy('$(CanXStaticNativeSidecars)').Split('|'))" />
+    </ItemGroup>
+    <Delete Files="@(_CanXStaticNativeSidecar->'$(PublishDir)%(Identity)')" />
+  </Target>
+</Project>

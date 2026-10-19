@@ -1,0 +1,30 @@
+<Window
+    x:Class="CanX.Spikes.MpvAvalonia.MainWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:CanX.Spikes.MpvAvalonia"
+    Title="CanX libmpv Render API spike"
+    Width="960"
+    Height="600"
+    MinWidth="640"
+    MinHeight="400">
+  <Grid RowDefinitions="*,Auto">
+    <Grid x:Name="VideoHost" Background="Black">
+      <local:MpvVideoSurface x:Name="VideoSurface" />
+      <Border
+          Margin="18"
+          Padding="12,8"
+          HorizontalAlignment="Left"
+          VerticalAlignment="Top"
+          Background="#B0202020"
+          CornerRadius="6">
+        <TextBlock Text="Avalonia overlay over libmpv Render API" />
+      </Border>
+    </Grid>
+    <TextBlock
+        x:Name="StatusText"
+        Grid.Row="1"
+        Padding="16,10"
+        Text="Initializing libmpv…" />
+  </Grid>
+</Window>

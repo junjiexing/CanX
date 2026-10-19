@@ -1,0 +1,13 @@
+{
+  "manifestVersion": 1,
+  "id": "org.canx.examples.internet-archive-video",
+  "name": "Internet Archive Video",
+  "description": "Searches freely accessible video metadata on Internet Archive and resolves playable MP4 sources.",
+  "version": "1.2.0",
+  "apiVersion": "2.0",
+  "entry": "dist/main.js",
+  "permissions": [
+    { "capability": "services.provide", "scopes": ["org.canx.media.search", "org.canx.media.resolve"] },
+    { "capability": "http", "scopes": ["archive.org", "*.archive.org"] }
+  ]
+}

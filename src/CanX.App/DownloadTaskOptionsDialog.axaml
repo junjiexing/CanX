@@ -1,0 +1,286 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<Window
+    x:Class="CanX.App.DownloadTaskOptionsDialog"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:CanX.App.Controls"
+    xmlns:downloads="using:CanX.Core.Downloads"
+    xmlns:vm="using:CanX.App.ViewModels"
+    x:DataType="vm:DownloadCenterViewModel"
+    Title="任务选项"
+    Icon="avares://CanX.App/Assets/CanXLogo.png"
+    Width="900"
+    Height="680"
+    MinWidth="760"
+    MinHeight="560"
+    CanResize="False"
+    AutomationProperties.Name="任务选项对话框"
+    WindowStartupLocation="CenterOwner">
+  <Border
+      x:Name="DialogFrame"
+      Background="{DynamicResource CanXBackgroundBrush}"
+      BorderBrush="{DynamicResource CanXBorderBrush}"
+      BorderThickness="1">
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+      <Border
+          x:Name="CustomTitleBar"
+          Height="30"
+          Background="{DynamicResource CanXTitleBarBrush}"
+          BorderBrush="{DynamicResource CanXBorderBrush}"
+          BorderThickness="0,0,0,1"
+          PointerPressed="OnTitleBarPointerPressed">
+        <Grid>
+          <Image
+              Width="16"
+              Height="16"
+              Margin="8,0,0,0"
+              HorizontalAlignment="Left"
+              VerticalAlignment="Center"
+              IsHitTestVisible="False"
+              Source="avares://CanX.App/Assets/CanXLogo.png"
+              Stretch="Uniform" />
+          <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False" Text="任务选项" />
+          <Button
+              HorizontalAlignment="Right"
+              Classes="titlebar close"
+              AutomationProperties.Name="关闭任务选项"
+              Click="OnCloseClick"
+              ToolTip.Tip="关闭" />
+        </Grid>
+      </Border>
+
+      <Grid Grid.Row="1" Margin="16,14,16,0" ColumnDefinitions="*,Auto">
+        <StackPanel>
+          <TextBlock FontSize="22" FontWeight="SemiBold" Text="{Binding SelectedTask.Name}" />
+          <TextBlock Margin="0,4,0,0" Foreground="{DynamicResource CanXMutedTextBrush}" Text="{Binding SelectedDetails}" TextWrapping="Wrap" />
+        </StackPanel>
+        <TextBlock Grid.Column="1" VerticalAlignment="Bottom" Foreground="{DynamicResource CanXMutedTextBrush}" Text="{Binding SelectedTask.State}" />
+      </Grid>
+
+      <TabControl x:Name="TaskOptionTabs" Grid.Row="2" Margin="16,12">
+        <TabControl.Styles>
+          <Style Selector="TabItem">
+            <Setter Property="FontSize" Value="14" />
+          </Style>
+        </TabControl.Styles>
+
+        <TabItem Header="常用选项">
+          <Grid Margin="12" RowDefinitions="*,8,Auto">
+            <ScrollViewer ToolTip.Tip="留空的项目不会修改">
+              <ItemsControl ItemsSource="{Binding TaskCommonOptions}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:DownloadCommonOptionViewModel">
+                    <Grid Margin="0,0,0,7" ColumnDefinitions="180,*,150">
+                      <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Label}" />
+                        <TextBlock FontSize="11" Foreground="{DynamicResource CanXMutedTextBrush}" Text="{Binding Name}" />
+                      </StackPanel>
+                      <controls:DownloadCommonOptionEditor Grid.Column="1" Margin="10,0" />
+                      <TextBlock Grid.Column="2" VerticalAlignment="Center" Foreground="{DynamicResource CanXMutedTextBrush}" Text="{Binding ScopeSummary}" />
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
+            <Button Grid.Row="2" HorizontalAlignment="Right" Command="{Binding ApplyCommonTaskOptionsCommand}" Content="应用常用选项" />
+          </Grid>
+        </TabItem>
+
+        <TabItem Header="高级选项">
+          <Grid Margin="12" RowDefinitions="*,8,Auto">
+            <TextBox
+                AcceptsReturn="True"
+                AutomationProperties.Name="当前任务高级选项"
+                FontFamily="monospace"
+                PlaceholderText="max-download-limit=4M"
+                Text="{Binding TaskOptionsText}"
+                ToolTip.Tip="每行一个 aria2 key=value" />
+            <Button Grid.Row="2" HorizontalAlignment="Right" Command="{Binding ApplyTaskOptionsCommand}" Content="应用高级选项" />
+          </Grid>
+        </TabItem>
+
+        <TabItem Header="分片进度">
+          <Grid Margin="12" RowDefinitions="Auto,10,Auto,12,*,12,Auto">
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel>
+                <TextBlock FontSize="16" FontWeight="SemiBold" Text="下载分片分布" />
+                <TextBlock
+                    Margin="0,3,0,0"
+                    Foreground="{DynamicResource CanXMutedTextBrush}"
+                    Text="{Binding SelectedTask.PieceSummary}" />
+              </StackPanel>
+              <TextBlock
+                  Grid.Column="1"
+                  VerticalAlignment="Center"
+                  FontSize="18"
+                  FontWeight="SemiBold"
+                  Text="{Binding SelectedTask.ProgressText}" />
+            </Grid>
+
+            <ProgressBar
+                Grid.Row="2"
+                Height="14"
+                Minimum="0"
+                Maximum="100"
+                Value="{Binding SelectedTask.Progress}" />
+
+            <Border
+                Grid.Row="4"
+                Classes="panel"
+                MinHeight="260"
+                Padding="14">
+              <Grid>
+                <controls:DownloadPieceMap
+                    AutomationProperties.Name="所选任务分片完成图"
+                    Bitfield="{Binding SelectedTask.Snapshot.Bitfield}"
+                    CompletedBrush="{DynamicResource CanXAccentBrush}"
+                    IsVisible="{Binding SelectedTask.HasPieceMap}"
+                    MissingBrush="{DynamicResource CanXSubtleBrush}"
+                    PartialBrush="{DynamicResource CanXMutedTextBrush}"
+                    PieceCount="{Binding SelectedTask.Snapshot.PieceCount}" />
+                <TextBlock
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Foreground="{DynamicResource CanXMutedTextBrush}"
+                    IsVisible="{Binding !SelectedTask.HasPieceMap}"
+                    Text="当前任务尚未提供分片数据，将显示普通下载进度。" />
+              </Grid>
+            </Border>
+
+            <Grid Grid.Row="6" ColumnDefinitions="Auto,Auto,20,Auto,Auto,20,Auto,Auto,*">
+              <Border Width="13" Height="13" VerticalAlignment="Center" Background="{DynamicResource CanXAccentBrush}" />
+              <TextBlock Grid.Column="1" Margin="6,0,0,0" Text="已下载" />
+              <Border Grid.Column="3" Width="13" Height="13" VerticalAlignment="Center" Background="{DynamicResource CanXMutedTextBrush}" />
+              <TextBlock Grid.Column="4" Margin="6,0,0,0" Text="混合区段" />
+              <Border Grid.Column="6" Width="13" Height="13" VerticalAlignment="Center" Background="{DynamicResource CanXSubtleBrush}" />
+              <TextBlock Grid.Column="7" Margin="6,0,0,0" Text="未下载" />
+              <TextBlock
+                  Grid.Column="8"
+                  HorizontalAlignment="Right"
+                  Foreground="{DynamicResource CanXMutedTextBrush}"
+                  Text="{Binding SelectedTask.PieceDetails}" />
+            </Grid>
+          </Grid>
+        </TabItem>
+
+        <TabItem Header="文件">
+          <Grid Margin="12" RowDefinitions="*,8,Auto">
+            <ListBox ItemsSource="{Binding SelectedFiles}">
+              <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="downloads:DownloadFileSnapshot">
+                  <Grid Margin="4" ColumnDefinitions="Auto,*,120,130">
+                    <CheckBox IsChecked="{Binding IsSelected}" IsEnabled="False" />
+                    <TextBlock Grid.Column="1" Margin="8,0" Text="{Binding Path}" TextTrimming="CharacterEllipsis" />
+                    <ProgressBar Grid.Column="2" Height="8" MinWidth="0" Margin="4,0" VerticalAlignment="Center" Minimum="0" Maximum="100" Value="{Binding ProgressPercent}" />
+                    <TextBlock Grid.Column="3" HorizontalAlignment="Right" Text="{Binding CompletedLength, StringFormat='{}{0:N0} B'}" />
+                  </Grid>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+            <Grid Grid.Row="2" ColumnDefinitions="*,Auto">
+              <TextBox AutomationProperties.Name="任务文件选择" PlaceholderText="文件序号，例如 1,3-5" Text="{Binding FileSelectionText}" />
+              <Button Grid.Column="1" Margin="8,0,0,0" Command="{Binding ApplyFileSelectionCommand}" Content="应用文件选择" />
+            </Grid>
+          </Grid>
+        </TabItem>
+
+        <TabItem Header="Tracker">
+          <Grid Margin="12" RowDefinitions="Auto,8,*">
+            <TextBlock FontWeight="SemiBold" Text="Tracker 地址" />
+            <TextBox
+                Grid.Row="2"
+                AcceptsReturn="True"
+                IsReadOnly="True"
+                Text="{Binding TrackerSummary}"
+                TextWrapping="Wrap" />
+          </Grid>
+        </TabItem>
+
+        <TabItem Header="完成与计划">
+          <StackPanel Margin="12" Spacing="14">
+            <Border Classes="panel" Padding="14">
+              <Grid ColumnDefinitions="Auto,180,Auto,*">
+                <CheckBox VerticalAlignment="Center" Content="完成时通知" IsChecked="{Binding SelectedNotifyOnCompletion}" />
+                <ComboBox Grid.Column="1" Margin="12,0" ItemsSource="{Binding CompletionActions}" SelectedItem="{Binding SelectedCompletionAction}" />
+                <Button Grid.Column="2" Command="{Binding ApplyCompletionPolicyCommand}" Content="应用完成策略" />
+              </Grid>
+            </Border>
+            <Border Classes="panel" Padding="14">
+              <Grid ColumnDefinitions="180,*,Auto" RowDefinitions="Auto,6,Auto">
+                <TextBlock FontWeight="SemiBold" Text="计划开始时间" />
+                <TextBlock Grid.Row="2" Foreground="{DynamicResource CanXMutedTextBrush}" Text="留空并应用可清除计划。" />
+                <TextBox Grid.RowSpan="3" Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center" PlaceholderText="例如 2026-09-08 22:30" Text="{Binding SelectedScheduledStartText}" />
+                <Button Grid.RowSpan="3" Grid.Column="2" Margin="8,0,0,0" VerticalAlignment="Center" Command="{Binding ApplyScheduleCommand}" Content="应用计划" />
+              </Grid>
+            </Border>
+          </StackPanel>
+        </TabItem>
+
+        <TabItem Header="连接与诊断">
+          <Grid Margin="12" RowDefinitions="Auto,8,Auto,8,*,8,*">
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Text="{Binding SelectedDiagnosticSummary}" TextWrapping="Wrap" />
+              <Button Grid.Column="1" Margin="8,0,0,0" Command="{Binding RefreshConnectionsCommand}" Content="刷新连接" />
+            </Grid>
+            <TextBlock Grid.Row="2" Foreground="{DynamicResource CanXDangerBrush}" Text="{Binding SelectedErrorSummary}" TextWrapping="Wrap" />
+            <ListBox Grid.Row="4" ItemsSource="{Binding Peers}">
+              <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="downloads:DownloadPeerSnapshot">
+                  <Grid ColumnDefinitions="*,Auto,Auto,Auto">
+                    <TextBlock Text="{Binding Ip}" />
+                    <TextBlock Grid.Column="1" Margin="8,0" Text="{Binding Port}" />
+                    <TextBlock Grid.Column="2" Margin="8,0" Text="{Binding DownloadSpeed}" />
+                    <TextBlock Grid.Column="3" Text="{Binding UploadSpeed}" />
+                  </Grid>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+            <ListBox Grid.Row="6" ItemsSource="{Binding Servers}">
+              <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="downloads:DownloadServerSnapshot">
+                  <Grid ColumnDefinitions="Auto,*,Auto">
+                    <TextBlock Text="{Binding FileIndex}" />
+                    <TextBlock Grid.Column="1" Margin="8,0" Text="{Binding CurrentUri}" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Grid.Column="2" Text="{Binding DownloadSpeed}" />
+                  </Grid>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </Grid>
+        </TabItem>
+
+        <TabItem Header="全部选项">
+          <Grid Margin="12" RowDefinitions="Auto,8,Auto,8,*,8,Auto,8,Auto">
+            <TextBlock Text="{Binding CapabilitySummary}" TextWrapping="Wrap" />
+            <TextBox Grid.Row="2" PlaceholderText="搜索可修改的任务选项" Text="{Binding OptionSearchText}" />
+            <DataGrid
+                Grid.Row="4"
+                AutoGenerateColumns="False"
+                IsReadOnly="True"
+                ItemsSource="{Binding TaskOptionDefinitions}"
+                SelectedItem="{Binding SelectedOptionDefinition}">
+              <DataGrid.Columns>
+                <DataGridTextColumn Width="180" Header="选项" Binding="{Binding Name}" />
+                <DataGridTextColumn Width="*" Header="允许值" Binding="{Binding PossibleValues}" />
+                <DataGridCheckBoxColumn Width="60" Header="活动" Binding="{Binding ChangeActive}" />
+                <DataGridCheckBoxColumn Width="60" Header="等待" Binding="{Binding ChangeReserved}" />
+              </DataGrid.Columns>
+            </DataGrid>
+            <TextBlock Grid.Row="6" MaxHeight="72" Text="{Binding SelectedOptionDetails}" TextWrapping="Wrap" />
+            <Grid Grid.Row="8" ColumnDefinitions="*,Auto">
+              <TextBox AutomationProperties.Name="所选任务选项值" PlaceholderText="选项值" Text="{Binding SelectedOptionValue}" />
+              <Button Grid.Column="1" Margin="8,0,0,0" Command="{Binding ApplySelectedTaskOptionCommand}" Content="应用所选选项" />
+            </Grid>
+          </Grid>
+        </TabItem>
+      </TabControl>
+
+      <Border Grid.Row="3" Background="{DynamicResource CanXPanelBrush}" BorderBrush="{DynamicResource CanXBorderBrush}" BorderThickness="0,1,0,0" Padding="12">
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock VerticalAlignment="Center" AutomationProperties.LiveSetting="Polite" Foreground="{DynamicResource CanXMutedTextBrush}" Text="{Binding StatusMessage}" TextTrimming="CharacterEllipsis" />
+          <Button Grid.Column="1" MinWidth="90" Click="OnCloseClick" Content="关闭" />
+        </Grid>
+      </Border>
+    </Grid>
+  </Border>
+</Window>

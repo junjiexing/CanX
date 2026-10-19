@@ -1,0 +1,16 @@
+{
+  "name": "canx-subtitle-assrt",
+  "private": true,
+  "type": "module",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "lint": "canx-plugin lint .",
+    "test": "npm run build && node --test",
+    "pack:canx": "npm run build && canx-plugin pack ."
+  },
+  "devDependencies": {
+    "@canx/plugin-api": "file:../../sdk/canx-plugin-api",
+    "typescript": "^5.9.2"
+  }
+}

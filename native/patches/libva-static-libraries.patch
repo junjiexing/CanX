@@ -1,0 +1,58 @@
+diff --git a/va/meson.build b/va/meson.build
+index 6005cf8..ef3d248 100644
+--- a/va/meson.build
++++ b/va/meson.build
+@@ -68,7 +68,7 @@ endif
+ 
+ install_headers(libva_headers, subdir : 'va')
+ 
+-libva = shared_library(
++libva = library(
+   'va',
+   sources : libva_sources +
+             libva_headers +
+@@ -121,7 +121,7 @@ if WITH_DRM
+ 
+   install_headers(libva_drm_headers, subdir : 'va')
+ 
+-  libva_drm = shared_library(
++  libva_drm = library(
+     'va-drm',
+     sources : libva_drm_sources +
+               libva_drm_headers +
+@@ -172,7 +172,7 @@ if WITH_X11
+ 
+   deps = [ libdrm_dep, x11_dep, xext_dep, xfixes_dep, x11_xcb_dep, xcb_dep, xcb_dri3_dep, libva_dep ]
+ 
+-  libva_x11 = shared_library(
++  libva_x11 = library(
+     'va-x11',
+     sources : libva_x11_sources +
+               libva_x11_headers +
+@@ -210,7 +210,7 @@ if WITH_GLX
+ 
+   deps = [ gl_dep, libva_x11_dep ]
+ 
+-  libva_glx = shared_library(
++  libva_glx = library(
+     'va-glx',
+     sources : libva_glx_sources +
+               libva_glx_headers +
+@@ -273,7 +273,7 @@ if WITH_WAYLAND
+ 
+   deps = [ libdrm_dep, wayland_dep, libva_dep ]
+ 
+-  libva_wayland = shared_library(
++  libva_wayland = library(
+     'va-wayland',
+     sources : libva_wayland_sources +
+               libva_wayland_headers +
+@@ -310,7 +310,7 @@ if WITH_WIN32
+ 
+   install_headers(libva_win32_headers, subdir : 'va')
+ 
+-  libva_win32 = shared_library(
++  libva_win32 = library(
+     'va_win32',
+     sources : libva_win32_sources +
+               libva_win32_headers,

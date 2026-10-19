@@ -1,0 +1,128 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PublishAot>true</PublishAot>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <!-- Generated from Assets/CanXLogo.png (16-256 px). NativeAOT copies the
+         managed Win32 resources, including this icon, into CanX.App.exe. -->
+    <ApplicationIcon>Assets\CanXLogo.ico</ApplicationIcon>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <!-- PlaybackWindow intercepts the pinned backend resize callback so Wayland
+         aspect correction happens before Avalonia lays out and renders a frame. -->
+    <AvaloniaAccessUnstablePrivateApis>true</AvaloniaAccessUnstablePrivateApis>
+    <NoWarn>$(NoWarn);AVA3001</NoWarn>
+    <!-- Avalonia's official DataGrid 12.1.2 contains reflection fallbacks even
+         when CanX defines every column with compiled bindings. Preserve that
+         assembly and keep its known analyzer diagnostics visible but non-fatal. -->
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);IL2026;IL2070;IL2075;IL3050;IL3053;IL2104</WarningsNotAsErrors>
+    <OptrisStaticGraphicsRequiredBackends>OpenGL;Software</OptrisStaticGraphicsRequiredBackends>
+    <OptrisStaticGraphicsAcknowledgeReducedTier>true</OptrisStaticGraphicsAcknowledgeReducedTier>
+    <OptrisStaticGraphicsInjectRuntimeGuard>false</OptrisStaticGraphicsInjectRuntimeGuard>
+    <CanXIncludeSmokeTests Condition="'$(CanXIncludeSmokeTests)' == ''">false</CanXIncludeSmokeTests>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(CanXIncludeSmokeTests)' == 'true'">
+    <DefineConstants>$(DefineConstants);CANX_SMOKE_TESTS</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(CanXIncludeSmokeTests)' != 'true'">
+    <Compile Remove="HlsPlaybackSmoke.cs" />
+    <Compile Remove="MultiWindowPlaybackSmoke.cs" />
+    <Compile Remove="SubtitleSliderSmoke.cs" />
+  </ItemGroup>
+
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
+    <CanXRepositoryRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../..'))</CanXRepositoryRoot>
+    <CanXDevelopmentAria2Sidecar>$(CanXRepositoryRoot)/artifacts/native/aria2-shim-dev-linux-x64/libcanx_aria2.so</CanXDevelopmentAria2Sidecar>
+    <CanXDevelopmentMpvSidecar>$(CanXRepositoryRoot)/artifacts/native/mpv-dev-linux-x64/libmpv.so</CanXDevelopmentMpvSidecar>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="Avalonia.Controls.DataGrid" />
+    <PackageReference Include="Avalonia.Desktop" />
+    <PackageReference Include="Avalonia.Wayland" />
+    <PackageReference Include="Tmds.DBus.Protocol" />
+    <PackageReference Include="Markdown.Avalonia.Tight" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(RuntimeIdentifier)' == 'win-x64'">
+    <PackageReference Include="Optris.StaticGraphics.Avalonia.OpenGL" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Assets/**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="ViewModels/**/*.cs" />
+    <Compile Remove="Controls/DownloadPieceMap.cs" />
+    <Compile Remove="Controls/PlaybackProgressPie.cs" />
+    <Compile Remove="Controls/PlaybackChapterMarkers.cs" />
+    <Compile Remove="Controls/MpvCompositionRenderWorker.cs" />
+    <Compile Remove="Controls/MpvCompositionSurface.cs" />
+    <Compile Remove="Controls/MpvOpenGlRenderWorker.cs" />
+    <Compile Remove="Controls/MpvOpenGlSync.cs" />
+    <Compile Remove="Controls/MpvPresentationMetrics.cs" />
+    <Compile Remove="Controls/MpvVideoSurface.cs" />
+    <Compile Remove="Controls/MpvVideoSurfaceHost.cs" />
+    <Compile Remove="Controls/PluginContributionHost.cs" />
+    <Compile Remove="Controls/PluginPageHost.cs" />
+    <Compile Remove="Automation/DesktopAutomationService.cs" />
+    <Compile Remove="PlaybackGestureCalculator.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../CanX.Agent/CanX.Agent.csproj" />
+    <ProjectReference Include="../CanX.Application/CanX.Application.csproj" />
+    <ProjectReference Include="../CanX.Core/CanX.Core.csproj" />
+    <ProjectReference Include="../CanX.DesignSystem/CanX.DesignSystem.csproj" />
+    <ProjectReference Include="../CanX.Downloads/CanX.Downloads.csproj" />
+    <ProjectReference Include="../CanX.Infrastructure/CanX.Infrastructure.csproj" />
+    <ProjectReference Include="../CanX.MediaAccess/CanX.MediaAccess.csproj" />
+    <ProjectReference Include="../CanX.Playback/CanX.Playback.csproj" />
+    <ProjectReference Include="../CanX.Presentation/CanX.Presentation.csproj" />
+    <ProjectReference Include="../CanX.Plugins/CanX.Plugins.csproj" />
+    <ProjectReference Include="../CanX.Streaming/CanX.Streaming.csproj" />
+    <ProjectReference Include="../CanX.Tooling/CanX.Tooling.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="CanX.Foundation.Tests" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(PublishAot)' == 'true'">
+    <TrimmerRootAssembly Include="Avalonia.Controls.DataGrid" />
+    <TrimmerRootAssembly Include="Markdown.Avalonia" />
+    <TrimmerRootAssembly Include="ColorDocument.Avalonia" />
+    <TrimmerRootAssembly Include="ColorTextBlock.Avalonia" />
+    <!-- The Linux AT-SPI bridge is activated through the desktop backend.
+         Root it so NativeAOT keeps the DBus handlers used by screen readers. -->
+    <TrimmerRootAssembly Include="Avalonia.FreeDesktop.AtSpi" />
+  </ItemGroup>
+
+  <Target
+      Name="BuildCanXDevelopmentNativeSidecars"
+      AfterTargets="Build"
+      Condition="'$(DesignTimeBuild)' != 'true' and '$(RuntimeIdentifier)' == 'linux-x64' and '$(CanXDevelopmentAria2Sidecar)' != '' and '$(CanXDirectPInvokeLibraries)' == ''">
+    <Exec
+        Command="&quot;$(CanXRepositoryRoot)/scripts/build-dev-native-linux-x64.sh&quot;"
+        WorkingDirectory="$(CanXRepositoryRoot)"
+        IgnoreStandardErrorWarningFormat="true" />
+    <Exec
+        Command="&quot;$(CanXRepositoryRoot)/scripts/build-dev-mpv-linux-x64.sh&quot;"
+        WorkingDirectory="$(CanXRepositoryRoot)"
+        IgnoreStandardErrorWarningFormat="true" />
+    <Copy
+        SourceFiles="$(CanXDevelopmentAria2Sidecar)"
+        DestinationFiles="$(TargetDir)libcanx_aria2.so"
+        SkipUnchangedFiles="true" />
+    <Copy
+        SourceFiles="$(CanXDevelopmentMpvSidecar)"
+        DestinationFiles="$(TargetDir)libmpv.so"
+        SkipUnchangedFiles="true" />
+  </Target>
+</Project>

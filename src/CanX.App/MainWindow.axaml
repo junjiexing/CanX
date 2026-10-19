@@ -1,0 +1,1410 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<Window
+    x:Class="CanX.App.MainWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:CanX.App.Controls"
+    xmlns:local="using:CanX.App"
+    xmlns:vm="using:CanX.App.ViewModels"
+    x:DataType="vm:ShellViewModel"
+    Title="CanX"
+    Icon="avares://CanX.App/Assets/CanXLogo.png"
+    Width="1320"
+    Height="820"
+    MinWidth="900"
+    MinHeight="600"
+    AutomationProperties.Name="CanX 下载中心"
+    DragDrop.AllowDrop="True"
+    DragDrop.DragOver="OnDragOver"
+    DragDrop.Drop="OnDrop"
+    WindowStartupLocation="CenterScreen">
+  <Window.Styles>
+    <Style Selector="DataGrid#WebDavEntryGrid /template/ DataGridColumnHeader">
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="DataGrid#WebDavEntryGrid /template/ DataGridColumnHeader:pointerover">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+  </Window.Styles>
+  <Grid>
+    <Border
+        x:Name="WindowFrame"
+        Background="{DynamicResource CanXBackgroundBrush}"
+        BorderBrush="{DynamicResource CanXBorderBrush}"
+        BorderThickness="1">
+      <Grid RowDefinitions="Auto,*">
+        <Border
+            x:Name="CustomTitleBar"
+            Grid.Row="0"
+            Height="30"
+            Background="{DynamicResource CanXTitleBarBrush}"
+            BorderBrush="{DynamicResource CanXBorderBrush}"
+            BorderThickness="0,0,0,1"
+            PointerPressed="OnTitleBarPointerPressed">
+          <Grid>
+            <Image
+                Width="16"
+                Height="16"
+                Margin="8,0,0,0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                IsHitTestVisible="False"
+                Source="avares://CanX.App/Assets/CanXLogo.png"
+                Stretch="Uniform" />
+            <TextBlock
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                IsHitTestVisible="False"
+                Text="CanX" />
+            <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+              <Button Classes="titlebar minimize" AutomationProperties.Name="最小化窗口" Click="OnMinimizeClick" ToolTip.Tip="最小化" />
+              <Button x:Name="MaximizeButton" Classes="titlebar maximize" AutomationProperties.Name="最大化窗口" Click="OnMaximizeClick" ToolTip.Tip="最大化" />
+              <Button Classes="titlebar close" AutomationProperties.Name="关闭窗口" Click="OnCloseClick" ToolTip.Tip="关闭" />
+            </StackPanel>
+          </Grid>
+        </Border>
+
+        <Grid x:Name="ContentGrid" Grid.Row="1" ColumnDefinitions="196,*">
+      <Border x:Name="Sidebar" Grid.Column="0" Background="{DynamicResource CanXPanelBrush}" BorderBrush="{DynamicResource CanXBorderBrush}" BorderThickness="0,0,1,0">
+        <Grid RowDefinitions="Auto,Auto,Auto,Auto,*,Auto">
+          <StackPanel Margin="14,14,14,12" VerticalAlignment="Center" Orientation="Horizontal" Spacing="10">
+            <Image
+                Width="36"
+                Height="36"
+                VerticalAlignment="Center"
+                Source="avares://CanX.App/Assets/CanXLogo.png"
+                Stretch="Uniform" />
+            <TextBlock VerticalAlignment="Center" FontSize="22" FontWeight="SemiBold" Text="CanX" />
+          </StackPanel>
+          <Button x:Name="DownloadNavigationButton" Grid.Row="1" Classes="nav selected" AutomationProperties.Name="当前页面：下载中心" Click="OnDownloadNavigationClick">
+            <Grid ColumnDefinitions="22,10,*">
+              <PathIcon Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center" Data="{StaticResource CanXIconDownload}" />
+              <TextBlock Grid.Column="2" VerticalAlignment="Center" Text="下载中心" />
+            </Grid>
+          </Button>
+          <Button x:Name="PlaybackNavigationButton" Grid.Row="2" Classes="nav" AutomationProperties.Name="播放器与媒体" Click="OnPlaybackNavigationClick">
+            <Grid ColumnDefinitions="22,10,*">
+              <PathIcon Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center" Data="{StaticResource CanXIconPlay}" />
+              <TextBlock Grid.Column="2" VerticalAlignment="Center" Text="播放器" />
+            </Grid>
+          </Button>
+          <Button x:Name="PlaybackHistoryNavigationButton" Grid.Row="3" Classes="nav" AutomationProperties.Name="播放历史" Click="OnPlaybackHistoryNavigationClick">
+            <Grid ColumnDefinitions="22,10,*">
+              <PathIcon Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center" Data="{StaticResource CanXIconHistory}" />
+              <TextBlock Grid.Column="2" VerticalAlignment="Center" Text="播放历史" />
+            </Grid>
+          </Button>
+          <ScrollViewer Grid.Row="4" VerticalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding PluginPages.Pages}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:PluginPageItemViewModel">
+                  <Button
+                      Classes="nav"
+                      Classes.selected="{Binding IsSelected}"
+                      AutomationProperties.Name="{Binding Title}"
+                      Click="OnPluginPageNavigationClick">
+                    <Grid ColumnDefinitions="24,8,*,Auto">
+                      <Image
+                          Width="20"
+                          Height="20"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center"
+                          IsVisible="{Binding HasAssetIcon}"
+                          Source="{Binding AssetIcon}"
+                          Stretch="Uniform" />
+                      <TextBlock
+                          Width="20"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center"
+                          FontSize="16"
+                          IsVisible="{Binding HasBuiltinIcon}"
+                          Text="{Binding IconGlyph}"
+                          TextAlignment="Center" />
+                      <TextBlock
+                          Grid.Column="2"
+                          VerticalAlignment="Center"
+                          Text="{Binding Title}"
+                          TextTrimming="CharacterEllipsis" />
+                      <Border
+                          Grid.Column="3"
+                          MinWidth="18"
+                          Margin="6,0,0,0"
+                          Padding="4,1"
+                          BorderThickness="1"
+                          IsVisible="{Binding HasBadge}">
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            FontSize="10"
+                            Text="{Binding BadgeText}" />
+                      </Border>
+                    </Grid>
+                  </Button>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+          <StackPanel Grid.Row="5">
+            <Separator />
+            <Button x:Name="AgentNavigationButton" Classes="nav" AutomationProperties.Name="AI Agent" Click="OnAgentNavigationClick">
+              <Grid ColumnDefinitions="22,10,*">
+                <PathIcon Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center" Data="{StaticResource CanXIconAgent}" />
+                <TextBlock Grid.Column="2" VerticalAlignment="Center" Text="Agent" />
+              </Grid>
+            </Button>
+            <Button x:Name="PluginsNavigationButton" Classes="nav" AutomationProperties.Name="插件管理" Click="OnPluginsNavigationClick">
+              <Grid ColumnDefinitions="22,10,*">
+                <PathIcon Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center" Data="{StaticResource CanXIconPlugin}" />
+                <TextBlock Grid.Column="2" VerticalAlignment="Center" Text="插件" />
+              </Grid>
+            </Button>
+            <Button x:Name="SettingsNavigationButton" Classes="nav" AutomationProperties.Name="设置" Click="OnSettingsNavigationClick">
+              <Grid ColumnDefinitions="22,10,*">
+                <PathIcon Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center" Data="{StaticResource CanXIconSettings}" />
+                <TextBlock Grid.Column="2" VerticalAlignment="Center" Text="设置" />
+              </Grid>
+            </Button>
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <Grid x:Name="DownloadCenterPage" Grid.Column="1" Margin="20" RowDefinitions="Auto,12,*,8,Auto,8,Auto" DataContext="{Binding DownloadCenter}">
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <Border Width="5" Background="{DynamicResource CanXAccentBrush}" />
+            <TextBlock Classes="page-title" AutomationProperties.HeadingLevel="1" Text="下载中心" />
+          </StackPanel>
+          <StackPanel Grid.Column="1" VerticalAlignment="Center" Orientation="Horizontal" Spacing="10">
+            <RadioButton
+                VerticalAlignment="Center"
+                AutomationProperties.Name="下载中任务筛选"
+                Content="下载中"
+                GroupName="DownloadTaskFilter"
+                IsChecked="{Binding ShowDownloadingTasks}" />
+            <RadioButton
+                VerticalAlignment="Center"
+                AutomationProperties.Name="已完成任务筛选"
+                Content="已完成"
+                GroupName="DownloadTaskFilter"
+                IsChecked="{Binding ShowCompletedTasks}" />
+            <Button
+                x:Name="AddDownloadTaskButton"
+                Margin="6,0,0,0"
+                Classes="accent"
+                AutomationProperties.AcceleratorKey="Ctrl+L"
+                AutomationProperties.Name="添加下载任务"
+                Click="OnAddTaskClick"
+                IsEnabled="{Binding IsReady}">
+              <StackPanel Orientation="Horizontal" Spacing="7">
+                <PathIcon Width="16" Height="16" VerticalAlignment="Center" Data="{StaticResource CanXIconAdd}" />
+                <TextBlock VerticalAlignment="Center" Text="添加任务" />
+              </StackPanel>
+            </Button>
+          </StackPanel>
+        </Grid>
+
+        <Grid Grid.Row="2">
+          <DataGrid
+              x:Name="DownloadTaskGrid"
+              AutoGenerateColumns="False"
+              AutomationProperties.AcceleratorKey="Ctrl+Shift+L"
+              AutomationProperties.HelpText="使用方向键选择任务；右键或双击任务可打开任务选项"
+              AutomationProperties.Name="下载任务列表"
+              CanUserReorderColumns="True"
+              CanUserResizeColumns="True"
+              IsReadOnly="True"
+              ItemsSource="{Binding Tasks}"
+              LoadingRow="OnDownloadTaskLoadingRow"
+              SelectedItem="{Binding SelectedTask}"
+              SelectionMode="Single"
+              UnloadingRow="OnDownloadTaskUnloadingRow">
+            <DataGrid.ContextMenu>
+              <ContextMenu x:DataType="vm:DownloadCenterViewModel">
+                <MenuItem Header="任务选项…" Click="OnOpenTaskOptionsClick" />
+                <MenuItem Header="边下边播" Click="OnPlayDownloadTaskClick" IsEnabled="{Binding CanPlaySelectedTask}" />
+                <Separator />
+                <MenuItem Header="暂停" Command="{Binding PauseCommand}" />
+                <MenuItem Header="继续 / 重试" Command="{Binding ResumeCommand}" />
+                <Separator />
+                <MenuItem Header="上移" Command="{Binding MoveUpCommand}" />
+                <MenuItem Header="下移" Command="{Binding MoveDownCommand}" />
+                <Separator />
+                <MenuItem Header="删除任务" Click="OnRemoveTaskClick" IsEnabled="{Binding CanRemoveSelectedTask}" />
+              </ContextMenu>
+            </DataGrid.ContextMenu>
+            <DataGrid.Columns>
+              <DataGridTextColumn Width="2*" Header="名称" Binding="{Binding Name}" />
+              <DataGridTextColumn Width="80" Header="状态" Binding="{Binding State}" />
+              <DataGridTemplateColumn Width="160" Header="进度">
+                <DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate x:DataType="vm:DownloadTaskRowViewModel">
+                    <Grid Margin="4" ColumnDefinitions="*,Auto">
+                      <!-- Fluent defaults to a 200px minimum, which clips low progress in this column. -->
+                      <ProgressBar
+                          Height="12"
+                          MinWidth="0"
+                          VerticalAlignment="Center"
+                          Minimum="0"
+                          Maximum="100"
+                          Value="{Binding Progress}" />
+                      <TextBlock Grid.Column="1" Margin="8,0,0,0" Text="{Binding ProgressText}" />
+                    </Grid>
+                  </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+              </DataGridTemplateColumn>
+              <DataGridTextColumn Width="90" Header="大小" Binding="{Binding Size}" />
+              <DataGridTextColumn Width="100" Header="下载" Binding="{Binding DownloadSpeed}" />
+              <DataGridTextColumn Width="100" Header="上传" Binding="{Binding UploadSpeed}" />
+              <DataGridTextColumn Width="80" Header="ETA" Binding="{Binding Eta}" />
+              <DataGridTextColumn Width="60" Header="连接" Binding="{Binding Connections}" />
+            </DataGrid.Columns>
+          </DataGrid>
+        </Grid>
+
+        <ScrollViewer Grid.Row="4" MaxHeight="260" VerticalScrollBarVisibility="Auto">
+          <StackPanel Spacing="10">
+            <controls:PluginContributionHost x:Name="PluginHomePanelHost" Slot="home.panel" />
+            <controls:PluginContributionHost x:Name="PluginHomeStatusHost" Slot="home.status" />
+            <controls:PluginContributionHost x:Name="PluginDownloadsDetailsHost" Slot="downloads.details" />
+            <controls:PluginContributionHost x:Name="PluginDownloadsStatusHost" Slot="downloads.status" />
+            <controls:PluginContributionHost x:Name="PluginDownloadsMenuHost" Slot="menu.downloads" />
+          </StackPanel>
+        </ScrollViewer>
+
+        <Border Grid.Row="6" Background="{DynamicResource CanXPanelBrush}" BorderBrush="{DynamicResource CanXBorderBrush}" BorderThickness="1" Padding="10,7">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock
+                x:Name="StatusText"
+                VerticalAlignment="Center"
+                AutomationProperties.LiveSetting="Polite"
+                Foreground="{DynamicResource CanXMutedTextBrush}"
+                Text="{Binding StatusMessage}"
+                TextTrimming="CharacterEllipsis" />
+            <TextBlock Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center" FontSize="14" Text="{Binding GlobalSummary}" />
+          </Grid>
+        </Border>
+      </Grid>
+
+      <Grid
+          x:Name="PlaybackPage"
+          Grid.Column="1"
+          IsVisible="False"
+          x:DataType="vm:MediaSourceBrowserViewModel">
+        <Grid
+            x:Name="PlaybackSourcesView"
+            Margin="20"
+            RowDefinitions="Auto,12,*">
+          <Grid ColumnDefinitions="*,Auto">
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <Border Width="5" Background="{DynamicResource CanXSecondaryBrush}" />
+              <TextBlock Classes="page-title" AutomationProperties.HeadingLevel="1" Text="播放源" />
+            </StackPanel>
+            <StackPanel
+                Grid.Column="1"
+                VerticalAlignment="Center"
+                Orientation="Horizontal"
+                Spacing="8">
+              <Button
+                  x:Name="OpenLocalMediaButton"
+                  AutomationProperties.Name="打开本地文件"
+                  Click="OnBrowseMediaClick"
+                  Content="打开本地文件" />
+              <Button
+                  x:Name="OpenPlaybackAddressButton"
+                  AutomationProperties.Name="打开地址"
+                  Click="OnOpenPlaybackAddressClick"
+                  Content="打开地址" />
+              <Button
+                  x:Name="AddPlaybackSourceButton"
+                  Classes="accent"
+                  AutomationProperties.Name="添加播放源"
+                  Click="OnAddPlaybackSourceClick">
+                <StackPanel Orientation="Horizontal" Spacing="7">
+                  <PathIcon Width="16" Height="16" VerticalAlignment="Center" Data="{StaticResource CanXIconAdd}" />
+                  <TextBlock VerticalAlignment="Center" Text="添加播放源" />
+                </StackPanel>
+              </Button>
+            </StackPanel>
+          </Grid>
+
+          <Border Grid.Row="2" Classes="panel" Padding="0">
+            <Grid>
+              <DataGrid
+                  x:Name="PlaybackSourceGrid"
+                  AutoGenerateColumns="False"
+                  AutomationProperties.Name="播放源列表"
+                  CanUserReorderColumns="False"
+                  CanUserSortColumns="False"
+                  DoubleTapped="OnPlaybackSourceDoubleTapped"
+                  GridLinesVisibility="Horizontal"
+                  IsReadOnly="True"
+                  ItemsSource="{Binding Sources}"
+                  SelectedItem="{Binding SelectedSource}"
+                  SelectionMode="Single">
+                <DataGrid.ContextMenu>
+                  <ContextMenu>
+                    <MenuItem Header="打开" Click="OnOpenPlaybackSourceClick" IsEnabled="{Binding CanOpenSelectedSource}" />
+                    <Separator />
+                    <MenuItem Header="删除" Click="OnRemovePlaybackSourceClick" IsEnabled="{Binding CanRemoveSelectedSource}" />
+                  </ContextMenu>
+                </DataGrid.ContextMenu>
+                <DataGrid.Columns>
+                  <DataGridTextColumn Width="2*" Header="名称" Binding="{Binding Name}" />
+                  <DataGridTextColumn Width="130" Header="类型" Binding="{Binding Type}" />
+                  <DataGridTextColumn Width="3*" Header="位置" Binding="{Binding Location}" />
+                </DataGrid.Columns>
+              </DataGrid>
+              <StackPanel
+                  HorizontalAlignment="Center"
+                  VerticalAlignment="Center"
+                  IsHitTestVisible="False"
+                  IsVisible="{Binding !HasSources}"
+                  Spacing="6">
+                <TextBlock HorizontalAlignment="Center" FontSize="18" FontWeight="SemiBold" Text="还没有播放源" />
+              </StackPanel>
+            </Grid>
+          </Border>
+        </Grid>
+
+        <Grid
+            x:Name="MediaSourceBrowserView"
+            Margin="20"
+            RowDefinitions="Auto,12,*"
+            IsVisible="False">
+          <Grid ColumnDefinitions="Auto,12,*">
+            <Button
+                x:Name="BackToPlaybackSourcesButton"
+                MinWidth="92"
+                VerticalAlignment="Center"
+                AutomationProperties.Name="返回播放源列表"
+                Click="OnBackToPlaybackSourcesClick"
+                Content="← 播放源" />
+            <StackPanel Grid.Column="2">
+              <TextBlock AutomationProperties.HeadingLevel="1" FontSize="28" FontWeight="SemiBold" Text="{Binding PageTitle}" TextTrimming="CharacterEllipsis" />
+              <TextBlock
+                  Margin="0,5,0,0"
+                  Foreground="{DynamicResource CanXMutedTextBrush}"
+                  Text="{Binding SourceLabel}"
+                  TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+          </Grid>
+
+          <Border Grid.Row="2" Classes="panel" Padding="14">
+            <Grid RowDefinitions="Auto,6,Auto,10,Auto,10,Auto,10,*,10,Auto">
+              <Grid ColumnDefinitions="Auto,6,Auto,6,Auto,6,Auto,*,Auto">
+                <Button Classes="icon" AutomationProperties.Name="后退到上一个网络媒体目录" Click="OnMediaSourceNavigateBackClick" Content="←" IsEnabled="{Binding CanNavigateBack}" ToolTip.Tip="后退" />
+                <Button Grid.Column="2" Classes="icon" AutomationProperties.Name="前进到下一个网络媒体目录" Click="OnMediaSourceNavigateForwardClick" Content="→" IsEnabled="{Binding CanNavigateForward}" ToolTip.Tip="前进" />
+                <Button x:Name="WebDavNavigateUpButton" Grid.Column="4" Classes="icon" AutomationProperties.Name="返回上级目录" Click="OnWebDavNavigateUpClick" Content="↑" IsEnabled="{Binding CanNavigateUp}" ToolTip.Tip="上级目录" />
+                <Button Grid.Column="6" Classes="icon" AutomationProperties.Name="刷新网络媒体目录" Click="OnWebDavRefreshClick" IsEnabled="{Binding CanRefresh}" ToolTip.Tip="刷新">
+                  <PathIcon Width="17" Height="17" Data="{StaticResource CanXIconRefresh}" />
+                </Button>
+                <TextBlock Grid.Column="8" VerticalAlignment="Center" Foreground="{DynamicResource CanXMutedTextBrush}" Text="{Binding EntryViewSummary}" />
+              </Grid>
+
+              <Grid Grid.Row="2" ColumnDefinitions="*,Auto">
+                <TextBlock AutomationProperties.Name="当前网络媒体路径" Foreground="{DynamicResource CanXMutedTextBrush}" Text="{Binding CurrentLocation}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding CurrentLocation}" />
+                <TextBlock Grid.Column="1" Margin="12,0,0,0" MaxWidth="220" AutomationProperties.LiveSetting="Polite" Foreground="{DynamicResource CanXMutedTextBrush}" Text="{Binding StatusMessage}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding StatusMessage}" />
+              </Grid>
+
+              <Grid Grid.Row="4" ColumnDefinitions="2*,8,*">
+                <StackPanel>
+                  <TextBlock FontSize="12" Foreground="{DynamicResource CanXMutedTextBrush}" Text="文件名" />
+                  <TextBox AutomationProperties.Name="按名称筛选网络媒体文件" PlaceholderText="筛选文件" Text="{Binding EntryFilterText, Mode=TwoWay}" />
+                </StackPanel>
+                <StackPanel Grid.Column="2">
+                  <TextBlock FontSize="12" Foreground="{DynamicResource CanXMutedTextBrush}" Text="类型" />
+                  <ComboBox AutomationProperties.Name="按类型筛选网络媒体文件" ItemsSource="{Binding EntryTypeFilterOptions}" SelectedItem="{Binding SelectedEntryTypeFilter}" />
+                </StackPanel>
+              </Grid>
+
+              <Grid Grid.Row="6" ColumnDefinitions="*,8,Auto,8,Auto">
+                <ComboBox AutomationProperties.Name="网络媒体目录收藏夹" PlaceholderText="收藏夹" ItemsSource="{Binding Favorites}" SelectedItem="{Binding SelectedFavorite}" />
+                <Button Grid.Column="2" AutomationProperties.Name="打开收藏的网络媒体目录" Click="OnOpenMediaSourceFavoriteClick" Content="打开收藏" IsEnabled="{Binding CanOpenFavorite}" />
+                <Button Grid.Column="4" AutomationProperties.Name="收藏或取消收藏当前网络媒体目录" Click="OnToggleMediaSourceFavoriteClick" Content="{Binding FavoriteActionText}" IsEnabled="{Binding CanToggleFavorite}" ToolTip.Tip="收藏当前目录位置" />
+              </Grid>
+
+                <DataGrid
+                    x:Name="WebDavEntryGrid"
+                    Grid.Row="8"
+                    AutoGenerateColumns="False"
+                    AutomationProperties.Name="网络媒体文件列表"
+                    CanUserReorderColumns="False"
+                    CanUserSortColumns="False"
+                    DoubleTapped="OnWebDavEntryDoubleTapped"
+                    IsReadOnly="True"
+                    ItemsSource="{Binding Entries}"
+                    SelectedItem="{Binding SelectedEntry}"
+                    SelectionMode="Single">
+                  <DataGrid.Resources>
+                    <!-- This grid uses its own sort triangles, so do not reserve space for the theme's sort icon. -->
+                    <x:Double x:Key="DataGridSortIconMinWidth">0</x:Double>
+                  </DataGrid.Resources>
+                  <DataGrid.Columns>
+                    <DataGridTextColumn Width="2*" Binding="{Binding Name}">
+                      <DataGridTextColumn.Header>
+                        <Grid x:DataType="vm:MediaSourceBrowserViewModel" Tag="Name" AutomationProperties.Name="按名称排序" Background="Transparent" ColumnDefinitions="*,Auto" Focusable="True" HorizontalAlignment="Stretch" KeyDown="OnMediaSourceSortHeaderKeyDown" MinHeight="24">
+                          <TextBlock VerticalAlignment="Center" Text="名称" />
+                          <TextBlock Grid.Column="1" Margin="8,0,4,0" VerticalAlignment="Center" FontSize="10" Foreground="{DynamicResource CanXAccentBrush}" Text="{Binding NameSortIndicator}" />
+                        </Grid>
+                      </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Width="100" Binding="{Binding Type}">
+                      <DataGridTextColumn.Header>
+                        <Grid x:DataType="vm:MediaSourceBrowserViewModel" Tag="Type" AutomationProperties.Name="按类型排序" Background="Transparent" ColumnDefinitions="*,Auto" Focusable="True" HorizontalAlignment="Stretch" KeyDown="OnMediaSourceSortHeaderKeyDown" MinHeight="24">
+                          <TextBlock VerticalAlignment="Center" Text="类型" />
+                          <TextBlock Grid.Column="1" Margin="8,0,4,0" VerticalAlignment="Center" FontSize="10" Foreground="{DynamicResource CanXAccentBrush}" Text="{Binding TypeSortIndicator}" />
+                        </Grid>
+                      </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTemplateColumn Width="80">
+                      <DataGridTemplateColumn.Header>
+                        <Grid x:DataType="vm:MediaSourceBrowserViewModel" Tag="Progress" AutomationProperties.Name="按进度排序" Background="Transparent" ColumnDefinitions="*,Auto" Focusable="True" HorizontalAlignment="Stretch" KeyDown="OnMediaSourceSortHeaderKeyDown" MinHeight="24">
+                          <TextBlock VerticalAlignment="Center" Text="进度" />
+                          <TextBlock Grid.Column="1" Margin="8,0,4,0" VerticalAlignment="Center" FontSize="10" Foreground="{DynamicResource CanXAccentBrush}" Text="{Binding ProgressSortIndicator}" />
+                        </Grid>
+                      </DataGridTemplateColumn.Header>
+                      <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="vm:MediaResourceItemViewModel">
+                          <controls:PlaybackProgressPie
+                              Width="19"
+                              Height="19"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Center"
+                              IsVisible="{Binding HasPlaybackHistory}"
+                              PlayedBrush="{DynamicResource CanXAccentBrush}"
+                              Progress="{Binding PlaybackProgress}"
+                              RemainingBrush="{DynamicResource CanXAccentSoftBrush}"
+                              ToolTip.Tip="{Binding PlaybackProgressText}" />
+                        </DataTemplate>
+                      </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Width="100" Binding="{Binding Size}">
+                      <DataGridTextColumn.Header>
+                        <Grid x:DataType="vm:MediaSourceBrowserViewModel" Tag="Size" AutomationProperties.Name="按大小排序" Background="Transparent" ColumnDefinitions="*,Auto" Focusable="True" HorizontalAlignment="Stretch" KeyDown="OnMediaSourceSortHeaderKeyDown" MinHeight="24">
+                          <TextBlock VerticalAlignment="Center" Text="大小" />
+                          <TextBlock Grid.Column="1" Margin="8,0,4,0" VerticalAlignment="Center" FontSize="10" Foreground="{DynamicResource CanXAccentBrush}" Text="{Binding SizeSortIndicator}" />
+                        </Grid>
+                      </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Width="150" Binding="{Binding Modified}">
+                      <DataGridTextColumn.Header>
+                        <Grid x:DataType="vm:MediaSourceBrowserViewModel" Tag="Modified" AutomationProperties.Name="按修改时间排序" Background="Transparent" ColumnDefinitions="*,Auto" Focusable="True" HorizontalAlignment="Stretch" KeyDown="OnMediaSourceSortHeaderKeyDown" MinHeight="24">
+                          <TextBlock VerticalAlignment="Center" Text="修改时间" />
+                          <TextBlock Grid.Column="1" Margin="8,0,4,0" VerticalAlignment="Center" FontSize="10" Foreground="{DynamicResource CanXAccentBrush}" Text="{Binding ModifiedSortIndicator}" />
+                        </Grid>
+                      </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                  </DataGrid.Columns>
+                </DataGrid>
+
+                <Grid Grid.Row="10" ColumnDefinitions="Auto,8,*,8,Auto">
+                  <TextBlock VerticalAlignment="Center" Text="外挂字幕" IsVisible="{Binding IsPlayableSelected}" />
+                  <ComboBox
+                      x:Name="WebDavSubtitleComboBox"
+                      Grid.Column="2"
+                      AutomationProperties.Name="网络媒体外挂字幕"
+                      ItemsSource="{Binding SubtitleChoices}"
+                      SelectedItem="{Binding SelectedSubtitle}"
+                      IsVisible="{Binding IsPlayableSelected}"
+                      ToolTip.Tip="按首选语言自动匹配，也可手动选择" />
+                  <Button
+                      Grid.Column="4"
+                      MinWidth="92"
+                      Classes="accent"
+                      AutomationProperties.Name="打开所选网络媒体项"
+                      Click="OnOpenWebDavEntryClick"
+                      Content="{Binding SelectedActionText}"
+                      IsEnabled="{Binding CanOpenSelected}" />
+                </Grid>
+            </Grid>
+          </Border>
+        </Grid>
+      </Grid>
+
+      <Grid
+          x:Name="PlaybackHistoryPage"
+          Grid.Column="1"
+          Margin="20"
+          RowDefinitions="Auto,12,Auto,8,*,12,Auto"
+          IsVisible="False"
+          x:DataType="vm:PlaybackViewModel">
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <Border Width="5" Background="{DynamicResource CanXSecondaryBrush}" />
+              <TextBlock Classes="page-title" AutomationProperties.HeadingLevel="1" Text="播放历史" />
+            </StackPanel>
+          </StackPanel>
+          <Button
+              Grid.Column="1"
+              VerticalAlignment="Center"
+              Classes="danger"
+              AutomationProperties.Name="清空播放历史"
+              Click="OnClearRecentClick"
+              Content="清空历史"
+              IsEnabled="{Binding HasRecentItems}"
+              ToolTip.Tip="删除全部播放记录，不删除媒体文件" />
+        </Grid>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="22">
+          <RadioButton
+              AutomationProperties.Name="最近播放的文件"
+              Content="最近播放的文件"
+              GroupName="PlaybackHistoryView"
+              IsChecked="{Binding ShowRecentFiles}" />
+          <RadioButton
+              AutomationProperties.Name="最近访问的文件夹"
+              Content="最近访问的文件夹"
+              GroupName="PlaybackHistoryView"
+              IsChecked="{Binding ShowRecentFolders}" />
+        </StackPanel>
+
+        <Border Grid.Row="4" Classes="panel" Padding="0">
+          <Grid>
+            <Grid IsVisible="{Binding ShowRecentFiles}">
+              <DataGrid
+                  x:Name="PlaybackHistoryGrid"
+                  AutoGenerateColumns="False"
+                  AutomationProperties.Name="播放历史列表"
+                  CanUserReorderColumns="False"
+                  CanUserSortColumns="False"
+                  DoubleTapped="OnRecentDoubleTapped"
+                  GridLinesVisibility="Horizontal"
+                  IsReadOnly="True"
+                  ItemsSource="{Binding RecentItems}"
+                  SelectedItem="{Binding SelectedRecentItem}"
+                  SelectionMode="Single">
+                <DataGrid.ContextMenu>
+                  <ContextMenu x:DataType="vm:PlaybackViewModel">
+                    <MenuItem Header="{Binding SelectedRecentActionText}" Click="OnPlayRecentClick" IsEnabled="{Binding CanOpenSelectedRecentItem}" />
+                    <Separator />
+                    <MenuItem Header="移除记录" Click="OnRemoveRecentClick" IsEnabled="{Binding CanRemoveSelectedRecentItem}" />
+                  </ContextMenu>
+                </DataGrid.ContextMenu>
+                <DataGrid.Columns>
+                  <DataGridTemplateColumn Width="3*" Header="媒体">
+                    <DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate x:DataType="vm:PlaybackRecentItemViewModel">
+                        <StackPanel Margin="8,6" Spacing="3">
+                          <TextBlock FontWeight="SemiBold" Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
+                          <TextBlock FontSize="12" Foreground="{DynamicResource CanXMutedTextBrush}" Text="{Binding LocationText}" TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                      </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                  </DataGridTemplateColumn>
+                  <DataGridTemplateColumn Width="2*" Header="进度">
+                    <DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate x:DataType="vm:PlaybackRecentItemViewModel">
+                        <StackPanel Margin="8,6" Orientation="Horizontal" Spacing="8">
+                          <controls:PlaybackProgressPie
+                              Width="19"
+                              Height="19"
+                              VerticalAlignment="Center"
+                              PlayedBrush="{DynamicResource CanXAccentBrush}"
+                              Progress="{Binding Progress}"
+                              RemainingBrush="{DynamicResource CanXAccentSoftBrush}" />
+                          <TextBlock VerticalAlignment="Center" Text="{Binding ProgressText}" TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                      </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                  </DataGridTemplateColumn>
+                  <DataGridTextColumn Width="145" Header="上次播放" Binding="{Binding LastPlayedText}" />
+                </DataGrid.Columns>
+              </DataGrid>
+              <StackPanel
+                  HorizontalAlignment="Center"
+                  VerticalAlignment="Center"
+                  IsHitTestVisible="False"
+                  IsVisible="{Binding !HasRecentItems}"
+                  Spacing="6">
+                <TextBlock HorizontalAlignment="Center" FontSize="18" FontWeight="SemiBold" Text="暂无播放历史" />
+              </StackPanel>
+            </Grid>
+            <Grid IsVisible="{Binding ShowRecentFolders}">
+              <DataGrid
+                  x:Name="RecentFoldersGrid"
+                  AutoGenerateColumns="False"
+                  AutomationProperties.Name="最近访问的文件夹列表"
+                  CanUserReorderColumns="False"
+                  CanUserSortColumns="False"
+                  GridLinesVisibility="Horizontal"
+                  IsReadOnly="True"
+                  ItemsSource="{Binding RecentFolders}"
+                  SelectionMode="Single">
+                <DataGrid.Columns>
+                  <DataGridTemplateColumn Width="2*" Header="文件夹">
+                    <DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate x:DataType="vm:PlaybackRecentFolderViewModel">
+                        <Grid Margin="8,6" ColumnDefinitions="Auto,10,*">
+                          <PathIcon Width="17" Height="17" VerticalAlignment="Center" Data="{StaticResource CanXIconFolder}" />
+                          <TextBlock Grid.Column="2" VerticalAlignment="Center" FontWeight="SemiBold" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                        </Grid>
+                      </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                  </DataGridTemplateColumn>
+                  <DataGridTextColumn Width="3*" Header="位置" Binding="{Binding Location}" />
+                  <DataGridTextColumn Width="145" Header="最近播放" Binding="{Binding LastPlayedText}" />
+                </DataGrid.Columns>
+              </DataGrid>
+              <TextBlock
+                  HorizontalAlignment="Center"
+                  VerticalAlignment="Center"
+                  FontSize="18"
+                  FontWeight="SemiBold"
+                  IsHitTestVisible="False"
+                  IsVisible="{Binding !HasRecentFolders}"
+                  Text="暂无访问的文件夹" />
+            </Grid>
+          </Grid>
+        </Border>
+
+        <Grid Grid.Row="6" ColumnDefinitions="*,Auto,8,Auto" IsVisible="{Binding ShowRecentFiles}">
+          <Button
+              Grid.Column="1"
+              MinWidth="92"
+              AutomationProperties.Name="移除所选播放记录"
+              Click="OnRemoveRecentClick"
+              Content="移除记录"
+              IsEnabled="{Binding CanRemoveSelectedRecentItem}" />
+          <Button
+              Grid.Column="3"
+              MinWidth="100"
+              Classes="accent"
+              AutomationProperties.Name="播放所选历史记录"
+              Click="OnPlayRecentClick"
+              Content="{Binding SelectedRecentActionText}"
+              IsEnabled="{Binding CanOpenSelectedRecentItem}" />
+        </Grid>
+      </Grid>
+
+      <Grid
+          x:Name="AgentPage"
+          Grid.Column="1"
+          Margin="20"
+          RowDefinitions="Auto,12,*,12,Auto"
+          IsVisible="False"
+          DataContext="{Binding Agent}"
+          x:DataType="vm:AgentViewModel">
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <Border Width="5" Background="{DynamicResource CanXWarningBrush}" />
+              <TextBlock Classes="page-title" AutomationProperties.HeadingLevel="1" Text="Agent" />
+            </StackPanel>
+          </StackPanel>
+          <StackPanel Grid.Column="1" VerticalAlignment="Center" Orientation="Horizontal" Spacing="8">
+            <Button Command="{Binding NewConversationCommand}" Content="新会话" />
+            <Button Command="{Binding DeleteConversationCommand}" Content="删除会话" />
+          </StackPanel>
+        </Grid>
+
+        <Grid Grid.Row="2" ColumnDefinitions="240,12,*">
+          <Border Classes="panel" Padding="0">
+            <ListBox
+                AutomationProperties.Name="Agent 会话列表"
+                ItemsSource="{Binding Conversations}"
+                SelectedItem="{Binding SelectedConversation}">
+              <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:AgentConversationItemViewModel">
+                  <StackPanel Margin="8,6" Spacing="3">
+                    <TextBlock FontWeight="SemiBold" Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
+                    <TextBlock FontSize="11" Foreground="{DynamicResource CanXMutedTextBrush}" Text="{Binding UpdatedAt}" />
+                  </StackPanel>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </Border>
+
+          <Grid Grid.Column="2" RowDefinitions="*,Auto,Auto">
+            <Border Classes="panel" Padding="14">
+              <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding VisibleMessages}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:AgentChatMessageViewModel">
+                      <Border Margin="0,0,0,10" Padding="10" BorderBrush="{DynamicResource CanXBorderBrush}" BorderThickness="1">
+                        <StackPanel Spacing="5">
+                          <TextBlock FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource CanXMutedTextBrush}" Text="{Binding Role}" />
+                          <controls:AgentMarkdownViewer Markdown="{Binding Content}" IsVisible="{Binding IsMarkdown}" />
+                          <controls:AgentSelectableTextBlock Text="{Binding Content}" IsVisible="{Binding IsPlainText}" />
+                        </StackPanel>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </ScrollViewer>
+            </Border>
+
+            <Border Grid.Row="1" Margin="0,10,0,0" Padding="12" BorderBrush="{DynamicResource CanXBorderBrush}" BorderThickness="1" IsVisible="{Binding HasPendingApproval}">
+              <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Spacing="4">
+                  <TextBlock FontWeight="SemiBold" Text="{Binding PendingApproval.Risk, StringFormat=需要确认：{0}}" />
+                  <TextBlock Text="{Binding PendingApproval.ToolName}" />
+                  <TextBlock Foreground="{DynamicResource CanXMutedTextBrush}" Text="{Binding PendingApproval.Description}" TextWrapping="Wrap" />
+                  <Border Margin="0,5,0,0" Padding="10" BorderBrush="{DynamicResource CanXBorderBrush}" BorderThickness="1" IsVisible="{Binding PendingApproval.HasTrustedDetails}">
+                    <StackPanel Spacing="5">
+                      <TextBlock FontWeight="SemiBold" Text="宿主校验的插件安装审查" />
+                      <TextBlock Text="{Binding PendingApproval.TrustedDetails.Title}" TextWrapping="Wrap" />
+                      <TextBlock FontWeight="SemiBold" Text="申请权限" />
+                      <TextBlock Text="{Binding PendingApproval.TrustedDetails.Permissions}" TextWrapping="Wrap" />
+                      <TextBlock FontWeight="SemiBold" Text="固定检查" />
+                      <TextBlock Text="{Binding PendingApproval.TrustedDetails.Checks}" TextWrapping="Wrap" />
+                      <TextBlock FontWeight="SemiBold" Text="文件变化" />
+                      <TextBlock Text="{Binding PendingApproval.TrustedDetails.Changes}" TextWrapping="Wrap" />
+                      <TextBlock FontFamily="monospace" FontSize="11" Text="{Binding PendingApproval.TrustedDetails.Integrity}" TextWrapping="Wrap" />
+                    </StackPanel>
+                  </Border>
+                  <TextBlock MaxHeight="90" FontFamily="monospace" FontSize="11" Text="{Binding PendingApproval.Arguments}" TextWrapping="Wrap" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center" Orientation="Horizontal" Spacing="8">
+                  <Button Command="{Binding DenyCommand}" Content="拒绝" />
+                  <Button Classes="accent" Command="{Binding ApproveCommand}" Content="允许一次" />
+                </StackPanel>
+              </Grid>
+            </Border>
+
+            <Grid Grid.Row="2" Margin="0,10,0,0" ColumnDefinitions="*,Auto,Auto">
+              <TextBox
+                  MinHeight="58"
+                  MaxHeight="140"
+                  AcceptsReturn="True"
+                  AutomationProperties.Name="Agent 输入"
+                  PlaceholderText="例如：搜索某部影片及中文字幕，并让我选择播放或下载"
+                  ScrollViewer.VerticalScrollBarVisibility="Auto"
+                  Text="{Binding InputText}"
+                  TextWrapping="Wrap" />
+              <Button Grid.Column="1" MinWidth="80" Margin="8,0,0,0" VerticalAlignment="Center" Command="{Binding StopCommand}" Content="停止" />
+              <Button Grid.Column="2" MinWidth="80" Margin="8,0,0,0" VerticalAlignment="Center" Classes="accent" Command="{Binding SendCommand}">
+                <StackPanel Orientation="Horizontal" Spacing="7">
+                  <PathIcon Width="16" Height="16" VerticalAlignment="Center" Data="{StaticResource CanXIconSend}" />
+                  <TextBlock VerticalAlignment="Center" Text="发送" />
+                </StackPanel>
+              </Button>
+            </Grid>
+          </Grid>
+        </Grid>
+
+        <Grid Grid.Row="4" ColumnDefinitions="*,Auto">
+          <TextBlock Foreground="{DynamicResource CanXMutedTextBrush}" Text="{Binding StatusMessage}" TextWrapping="Wrap" />
+          <TextBlock Grid.Column="1" Margin="12,0,0,0" Foreground="{DynamicResource CanXMutedTextBrush}" Text="{Binding UsageText}" />
+        </Grid>
+      </Grid>
+
+      <Grid
+          x:Name="PluginsPage"
+          Grid.Column="1"
+          Margin="20"
+          RowDefinitions="Auto,12,*,12,Auto"
+          IsVisible="False"
+          DataContext="{Binding Plugins}"
+          x:DataType="vm:PluginManagerViewModel">
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <Border Width="5" Background="{DynamicResource CanXSuccessBrush}" />
+              <TextBlock Classes="page-title" AutomationProperties.HeadingLevel="1" Text="插件" />
+            </StackPanel>
+          </StackPanel>
+          <StackPanel Grid.Column="1" VerticalAlignment="Center" Orientation="Horizontal" Spacing="8">
+            <CheckBox AutomationProperties.Name="插件开发模式" Content="开发模式" IsChecked="{Binding IsDeveloperMode}" />
+            <Button AutomationProperties.Name="打开插件日志目录" Click="OnOpenPluginLogsClick" Content="日志…" />
+            <Button Command="{Binding RefreshCommand}" Content="刷新" />
+            <Button Classes="accent" AutomationProperties.Name="安装或升级插件" Click="OnInstallPluginClick">
+              <StackPanel Orientation="Horizontal" Spacing="7">
+                <PathIcon Width="16" Height="16" VerticalAlignment="Center" Data="{StaticResource CanXIconAdd}" />
+                <TextBlock VerticalAlignment="Center" Text="安装 / 升级" />
+              </StackPanel>
+            </Button>
+          </StackPanel>
+        </Grid>
+
+        <Grid Grid.Row="2" ColumnDefinitions="3*,12,2*">
+          <Border Classes="panel" Padding="0">
+            <Grid>
+              <DataGrid
+                  x:Name="PluginGrid"
+                  AutoGenerateColumns="False"
+                  AutomationProperties.Name="已安装插件"
+                  CanUserReorderColumns="False"
+                  CanUserSortColumns="True"
+                  GridLinesVisibility="Horizontal"
+                  IsReadOnly="True"
+                  ItemsSource="{Binding Plugins}"
+                  SelectedItem="{Binding SelectedPlugin}"
+                  SelectionMode="Single">
+                <DataGrid.Columns>
+                  <DataGridTextColumn Width="2*" Header="名称" Binding="{Binding Name}" />
+                  <DataGridTextColumn Width="*" Header="版本" Binding="{Binding Version}" />
+                  <DataGridTextColumn Width="*" Header="状态" Binding="{Binding Status}" />
+                  <DataGridTextColumn Width="*" Header="签名" Binding="{Binding SignatureStatus}" />
+                  <DataGridTextColumn Width="2*" Header="ID" Binding="{Binding Id}" />
+                </DataGrid.Columns>
+              </DataGrid>
+              <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False" IsVisible="{Binding !HasPlugins}" Spacing="6">
+                <TextBlock HorizontalAlignment="Center" FontSize="18" FontWeight="SemiBold" Text="尚未安装插件" />
+              </StackPanel>
+            </Grid>
+          </Border>
+
+          <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="12">
+              <Border Classes="panel" Padding="16" IsVisible="{Binding HasSelectedPlugin}">
+                <Grid MinHeight="72" ColumnDefinitions="72,12,*">
+                  <Border
+                      Width="72"
+                      Height="72"
+                      HorizontalAlignment="Left"
+                      VerticalAlignment="Top"
+                      Background="{DynamicResource CanXBackgroundBrush}"
+                      BorderBrush="{DynamicResource CanXBorderBrush}"
+                      BorderThickness="1">
+                    <Grid>
+                      <Image
+                          Width="56"
+                          Height="56"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center"
+                          IsVisible="{Binding SelectedPlugin.HasAssetIcon}"
+                          Source="{Binding SelectedPlugin.AssetIcon}"
+                          Stretch="Uniform" />
+                      <TextBlock
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center"
+                          FontSize="34"
+                          FontWeight="SemiBold"
+                          IsVisible="{Binding SelectedPlugin.HasBuiltinIcon}"
+                          Text="{Binding SelectedPlugin.IconGlyph}"
+                          TextAlignment="Center" />
+                    </Grid>
+                  </Border>
+                  <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="6">
+                    <TextBlock
+                        AutomationProperties.HeadingLevel="2"
+                        FontSize="20"
+                        FontWeight="SemiBold"
+                        Text="{Binding SelectedPlugin.Name}"
+                        TextWrapping="Wrap" />
+                    <TextBlock
+                        Foreground="{DynamicResource CanXMutedTextBrush}"
+                        Text="{Binding SelectedPlugin.Description}"
+                        TextWrapping="Wrap" />
+                  </StackPanel>
+                </Grid>
+              </Border>
+              <Border Classes="panel" Padding="14">
+                <StackPanel Spacing="8">
+                  <TextBlock FontSize="17" FontWeight="SemiBold" Text="权限" />
+                  <TextBlock Foreground="{DynamicResource CanXMutedTextBrush}" Text="{Binding SelectedDetails}" TextWrapping="Wrap" />
+                  <TextBlock Margin="0,6,0,0" FontWeight="SemiBold" IsVisible="{Binding HasPermissionChanges}" Text="本次安装 / 升级变化" />
+                  <TextBlock Foreground="{DynamicResource CanXMutedTextBrush}" IsVisible="{Binding HasPermissionChanges}" Text="{Binding PermissionChanges}" TextWrapping="Wrap" />
+                </StackPanel>
+              </Border>
+              <Border Classes="panel" Padding="14">
+                <StackPanel Spacing="8">
+                  <TextBlock FontSize="17" FontWeight="SemiBold" Text="运行状态" />
+                  <TextBlock Foreground="{DynamicResource CanXMutedTextBrush}" Text="{Binding SelectedError}" TextWrapping="Wrap" />
+                  <TextBlock Foreground="{DynamicResource CanXMutedTextBrush}" Text="{Binding SelectedRollbackDetails}" TextWrapping="Wrap" />
+                </StackPanel>
+              </Border>
+              <Border Classes="panel" Padding="14">
+                <Grid RowDefinitions="Auto,8,150" RowSpacing="0">
+                  <Grid ColumnDefinitions="*,Auto,Auto">
+                    <TextBlock VerticalAlignment="Center" FontSize="17" FontWeight="SemiBold" Text="插件调试控制台" />
+                    <Button Grid.Column="1" Margin="0,0,8,0" Command="{Binding ReloadCommand}" Content="重载所选" />
+                    <Button Grid.Column="2" Command="{Binding RefreshConsoleCommand}" Content="刷新" />
+                  </Grid>
+                  <TextBox
+                      Grid.Row="2"
+                      AcceptsReturn="True"
+                      AutomationProperties.Name="插件调试控制台输出"
+                      FontFamily="monospace"
+                      IsReadOnly="True"
+                      ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                      ScrollViewer.VerticalScrollBarVisibility="Auto"
+                      Text="{Binding ConsoleText}"
+                      TextWrapping="NoWrap" />
+                </Grid>
+              </Border>
+              <ScrollViewer MaxHeight="260" VerticalScrollBarVisibility="Auto">
+                <StackPanel Spacing="10">
+                  <controls:PluginContributionHost x:Name="PluginNavigationHost" Registry="{Binding UiRegistry}" Slot="navigation.plugins" />
+                  <controls:PluginContributionHost x:Name="PluginCommandPaletteHost" Registry="{Binding UiRegistry}" Slot="command.palette" />
+                  <controls:PluginContributionHost x:Name="PluginAppMenuHost" Registry="{Binding UiRegistry}" Slot="menu.app" />
+                </StackPanel>
+              </ScrollViewer>
+            </StackPanel>
+          </ScrollViewer>
+        </Grid>
+
+        <Grid Grid.Row="4" ColumnDefinitions="*,Auto">
+          <TextBlock VerticalAlignment="Center" AutomationProperties.LiveSetting="Polite" Foreground="{DynamicResource CanXMutedTextBrush}" IsVisible="{Binding HasStatusMessage}" Text="{Binding StatusMessage}" TextWrapping="Wrap" />
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+            <Button Command="{Binding EnableCommand}" Content="批准并启用" />
+            <Button Command="{Binding DisableCommand}" Content="停用" />
+            <Button Command="{Binding RollbackCommand}" Content="回滚上一版本" />
+            <Button AutomationProperties.Name="配置所选插件" Click="OnConfigurePluginClick" Content="配置…" IsEnabled="{Binding CanConfigureSelected}" />
+            <Button AutomationProperties.Name="卸载所选插件" Click="OnUninstallPluginClick" Content="卸载…" />
+          </StackPanel>
+        </Grid>
+      </Grid>
+
+      <Grid
+          x:Name="PluginManifestPage"
+          Grid.Column="1"
+          Margin="20"
+          RowDefinitions="Auto,12,*,8,Auto"
+          IsVisible="False"
+          DataContext="{Binding PluginPages}"
+          x:DataType="vm:PluginPagesViewModel">
+        <StackPanel>
+          <TextBlock
+              AutomationProperties.HeadingLevel="1"
+              FontSize="28"
+              FontWeight="SemiBold"
+              Text="{Binding SelectedPage.Title}" />
+          <TextBlock
+              Margin="0,5,0,0"
+              Foreground="{DynamicResource CanXMutedTextBrush}"
+              Text="插件提供的独立页面" />
+        </StackPanel>
+        <Border Grid.Row="2" Classes="panel" Padding="16">
+          <controls:PluginPageHost
+              x:Name="ManifestPluginPageHost"
+              Registry="{Binding Registry}"
+              PluginId="{Binding SelectedPage.PluginId}" />
+        </Border>
+        <TextBlock
+            Grid.Row="4"
+            AutomationProperties.LiveSetting="Polite"
+            Foreground="{DynamicResource CanXMutedTextBrush}"
+            IsVisible="{Binding HasStatusMessage}"
+            Text="{Binding StatusMessage}"
+            TextWrapping="Wrap" />
+      </Grid>
+
+      <Grid x:Name="SettingsPage" Grid.Column="1" Margin="20" RowDefinitions="Auto,12,*" IsVisible="False">
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <Border Width="5" Background="{DynamicResource CanXAccentBrush}" />
+              <TextBlock Classes="page-title" AutomationProperties.HeadingLevel="1" Text="设置" />
+            </StackPanel>
+            <TextBlock
+                Margin="0,5,0,0"
+                AutomationProperties.LiveSetting="Polite"
+                Classes="page-subtitle"
+                IsVisible="{Binding Settings.HasStatusMessage}"
+                Text="{Binding Settings.StatusMessage}" />
+          </StackPanel>
+          <Button
+              Grid.Column="1"
+              VerticalAlignment="Bottom"
+              Classes="accent"
+              AutomationProperties.Name="保存全部设置"
+              Command="{Binding Settings.SaveCommand}">
+            <StackPanel Orientation="Horizontal" Spacing="7">
+              <PathIcon Width="16" Height="16" VerticalAlignment="Center" Data="{StaticResource CanXIconSettings}" />
+              <TextBlock VerticalAlignment="Center" Text="保存全部设置" />
+            </StackPanel>
+          </Button>
+        </Grid>
+
+        <ScrollViewer x:Name="SettingsScrollViewer" Grid.Row="2" AutomationProperties.Name="设置内容">
+          <StackPanel Margin="0,0,8,20" Spacing="12">
+            <TextBlock AutomationProperties.HeadingLevel="2" FontSize="22" FontWeight="SemiBold" Text="通用" />
+            <Separator />
+            <TextBlock FontSize="17" FontWeight="SemiBold" Text="外观" />
+            <Border Classes="panel" Padding="14" DataContext="{Binding Settings}">
+              <Grid ColumnDefinitions="180,*">
+                <TextBlock FontWeight="SemiBold" Text="主题" />
+                <ComboBox
+                    x:Name="ThemeComboBox"
+                    Grid.Column="1"
+                    Width="220"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Center"
+                    AutomationProperties.Name="应用主题"
+                    ItemsSource="{Binding ThemeOptions}"
+                    SelectedItem="{Binding SelectedTheme}" />
+              </Grid>
+            </Border>
+
+            <TextBlock Margin="0,4,0,0" AutomationProperties.HeadingLevel="3" FontSize="17" FontWeight="SemiBold" Text="诊断" />
+            <Border Classes="panel" Padding="14" DataContext="{Binding Settings}">
+              <Grid ColumnDefinitions="180,*">
+                <TextBlock FontWeight="SemiBold" Text="日志记录" />
+                <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center" Spacing="5">
+                  <CheckBox
+                      AutomationProperties.Name="启用日志记录"
+                      Content="启用日志记录"
+                      IsChecked="{Binding IsLoggingEnabled}" />
+                  <TextBlock
+                      FontSize="11"
+                      Foreground="{DynamicResource CanXMutedTextBrush}"
+                      Text="{Binding LogDirectory, StringFormat=日志目录：{0}}"
+                      TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+              </Grid>
+            </Border>
+
+            <ContentControl x:Name="FileAssociationsHost" IsVisible="False" />
+
+            <TextBlock Margin="0,14,0,0" AutomationProperties.HeadingLevel="2" FontSize="22" FontWeight="SemiBold" Text="Agent" />
+            <Separator />
+            <Border Classes="panel" Padding="14" DataContext="{Binding Settings.Agent}">
+              <Grid ColumnDefinitions="160,*" RowDefinitions="Auto,8,Auto,8,Auto,8,Auto,8,Auto,8,Auto,8,Auto,8,Auto,8,Auto">
+                <TextBlock VerticalAlignment="Center" Text="API 地址" />
+                <TextBox Grid.Column="1" PlaceholderText="https://gateway.example/v1" Text="{Binding BaseUrl}" />
+                <TextBlock Grid.Row="2" VerticalAlignment="Center" Text="API Key" />
+                <TextBox Grid.Row="2" Grid.Column="1" PasswordChar="●" PlaceholderText="随设置一起保存；留空保留已保存的 Key" Text="{Binding ApiKeyInput}" />
+                <StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <Button Classes="accent" Command="{Binding TestConnectionCommand}" Content="测试并获取模型" />
+                  <Button Command="{Binding DeleteApiKeyCommand}" Content="删除 Key" />
+                </StackPanel>
+                <StackPanel Grid.Row="6" Grid.Column="1" Spacing="3">
+                  <TextBlock Foreground="{DynamicResource CanXMutedTextBrush}" Text="{Binding ConnectionStatus}" TextWrapping="Wrap" />
+                  <TextBlock Foreground="{DynamicResource CanXMutedTextBrush}" Text="{Binding CredentialStatus}" TextWrapping="Wrap" />
+                </StackPanel>
+                <TextBlock Grid.Row="8" VerticalAlignment="Center" Text="模型" />
+                <ComboBox Grid.Row="8" Grid.Column="1" Width="360" HorizontalAlignment="Left" IsEditable="True" PlaceholderText="测试后选择，或输入模型 ID" ItemsSource="{Binding ModelIds}" SelectedItem="{Binding SelectedModel, Mode=TwoWay}" Text="{Binding Model, Mode=TwoWay}" />
+                <TextBlock Grid.Row="10" VerticalAlignment="Center" Text="上下文大小" />
+                <StackPanel Grid.Row="10" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <TextBox Width="130" ToolTip.Tip="从模型接口读取；0 表示接口未提供，可手动填写" Text="{Binding ContextWindowTokens}" />
+                  <TextBlock VerticalAlignment="Center" Text="tokens" />
+                </StackPanel>
+                <TextBlock Grid.Row="12" VerticalAlignment="Center" Text="Temperature" />
+                <TextBox Grid.Row="12" Grid.Column="1" Width="90" HorizontalAlignment="Left" Text="{Binding Temperature}" />
+                <TextBlock Grid.Row="14" VerticalAlignment="Center" Text="总时限 / Tool 时限（秒）" />
+                <StackPanel Grid.Row="14" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <TextBox Width="80" Text="{Binding MaximumDurationSeconds}" />
+                  <TextBox Width="80" Text="{Binding ToolTimeoutSeconds}" />
+                </StackPanel>
+                <TextBlock Grid.Row="16" VerticalAlignment="Top" Text="工具调用" />
+                <StackPanel Grid.Row="16" Grid.Column="1" Spacing="8">
+                  <CheckBox Content="显示工具调用记录" IsChecked="{Binding ShowToolCalls}" />
+                  <CheckBox Content="自动批准工具调用（YOLO 模式）" IsChecked="{Binding AutoApproveToolCalls}" />
+                  <TextBlock FontSize="11" Foreground="{DynamicResource CanXMutedTextBrush}" TextWrapping="Wrap"
+                             Text="YOLO 模式从下次发送消息起生效，工具调用无需人工确认，包括写入和删除操作。" />
+                </StackPanel>
+              </Grid>
+            </Border>
+
+            <TextBlock Margin="0,14,0,0" AutomationProperties.HeadingLevel="2" FontSize="22" FontWeight="SemiBold" Text="下载" />
+            <Separator />
+
+            <TextBlock Margin="0,4,0,0" AutomationProperties.HeadingLevel="3" FontSize="17" FontWeight="SemiBold" Text="常用" />
+            <Border Classes="panel" Padding="14" DataContext="{Binding Settings}">
+              <Grid ColumnDefinitions="180,*,Auto">
+                <TextBlock FontWeight="SemiBold" Text="默认下载目录" />
+                <TextBox Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center" AutomationProperties.Name="默认下载目录" Text="{Binding DownloadDirectory}" />
+                <Button Grid.Column="2" Margin="8,0,0,0" VerticalAlignment="Center" Click="OnBrowseDefaultDownloadDirectoryClick" Content="浏览…" />
+              </Grid>
+            </Border>
+
+            <Border Classes="panel" Padding="14" DataContext="{Binding DownloadCenter}">
+              <Grid RowDefinitions="Auto,10,*,12,Auto">
+                <TextBlock FontWeight="SemiBold" Text="aria2 常用全局选项" ToolTip.Tip="留空不修改；DHT 设置重启后生效" />
+                <ItemsControl Grid.Row="2" ItemsSource="{Binding GlobalCommonOptions}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:DownloadCommonOptionViewModel">
+                      <Grid Margin="0,0,0,7" ColumnDefinitions="190,*">
+                        <StackPanel VerticalAlignment="Center">
+                          <TextBlock Text="{Binding Label}" />
+                          <TextBlock FontSize="11" Foreground="{DynamicResource CanXMutedTextBrush}" Text="{Binding Name}" />
+                        </StackPanel>
+                        <controls:DownloadCommonOptionEditor Grid.Column="1" Margin="12,0,0,0" />
+                      </Grid>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <Button Grid.Row="4" HorizontalAlignment="Right" Command="{Binding ApplyCommonGlobalOptionsCommand}" Content="立即应用并保存" />
+              </Grid>
+            </Border>
+
+            <TextBlock Margin="0,4,0,0" AutomationProperties.HeadingLevel="3" FontSize="17" FontWeight="SemiBold" Text="高级文本" />
+            <Border Classes="panel" Padding="14" DataContext="{Binding DownloadCenter}">
+              <Grid RowDefinitions="150,8,Auto">
+                <TextBox
+                    AcceptsReturn="True"
+                    AutomationProperties.Name="aria2 全局高级选项"
+                    FontFamily="monospace"
+                    PlaceholderText="max-overall-download-limit=0"
+                    Text="{Binding GlobalOptionsText}" />
+                <Button Grid.Row="2" HorizontalAlignment="Right" Command="{Binding ApplyGlobalOptionsCommand}" Content="立即应用并保存" />
+              </Grid>
+            </Border>
+
+            <TextBlock Margin="0,4,0,0" AutomationProperties.HeadingLevel="3" FontSize="17" FontWeight="SemiBold" Text="全部 aria2 选项" />
+            <Border Classes="panel" Padding="14" DataContext="{Binding DownloadCenter}">
+              <Grid RowDefinitions="Auto,8,Auto,8,260,8,Auto,8,Auto">
+                <TextBlock Text="{Binding CapabilitySummary}" TextWrapping="Wrap" />
+                <TextBox Grid.Row="2" PlaceholderText="搜索可全局修改的选项" Text="{Binding OptionSearchText}" />
+                <DataGrid
+                    Grid.Row="4"
+                    AutoGenerateColumns="False"
+                    IsReadOnly="True"
+                    ItemsSource="{Binding GlobalOptionDefinitions}"
+                    SelectedItem="{Binding SelectedGlobalOptionDefinition}">
+                  <DataGrid.Columns>
+                    <DataGridTextColumn Width="180" Header="选项" Binding="{Binding Name}" />
+                    <DataGridTextColumn Width="*" Header="允许值" Binding="{Binding PossibleValues}" />
+                    <DataGridTextColumn Width="150" Header="默认值" Binding="{Binding DefaultValue}" />
+                  </DataGrid.Columns>
+                </DataGrid>
+                <TextBlock Grid.Row="6" MaxHeight="72" Text="{Binding SelectedGlobalOptionDetails}" TextWrapping="Wrap" />
+                <Grid Grid.Row="8" ColumnDefinitions="*,Auto">
+                  <TextBox AutomationProperties.Name="aria2 全局选项值" PlaceholderText="选项值" Text="{Binding SelectedGlobalOptionValue}" />
+                  <Button Grid.Column="1" Margin="8,0,0,0" Command="{Binding ApplySelectedGlobalOptionCommand}" Content="立即应用并保存所选项" />
+                </Grid>
+              </Grid>
+            </Border>
+
+            <TextBlock Margin="0,14,0,0" AutomationProperties.HeadingLevel="2" FontSize="22" FontWeight="SemiBold" Text="播放" />
+            <Separator />
+
+            <TextBlock Margin="0,4,0,0" AutomationProperties.HeadingLevel="3" FontSize="17" FontWeight="SemiBold" Text="播放与解码" />
+            <Border Classes="panel" Padding="14" DataContext="{Binding Settings}">
+              <Grid ColumnDefinitions="190,*" RowDefinitions="Auto,8,Auto">
+                <TextBlock VerticalAlignment="Center" Text="打开媒体时" />
+                <ComboBox Grid.Column="1" AutomationProperties.Name="播放窗口模式"
+                    ItemsSource="{Binding PlaybackWindowModes}" SelectedItem="{Binding SelectedPlaybackWindowMode}" />
+                <TextBlock Grid.Row="2" Grid.ColumnSpan="2" Foreground="{DynamicResource CanXMutedTextBrush}"
+                    Text="保存后立即生效。替换模式使用最近激活的播放器；已打开的其他窗口会继续播放。" TextWrapping="Wrap" />
+              </Grid>
+            </Border>
+            <Border Classes="panel" Padding="14" DataContext="{Binding Settings.Mpv}">
+              <Grid ColumnDefinitions="190,*" RowDefinitions="Auto,8,Auto,8,Auto,8,Auto,8,Auto,8,Auto,8,Auto,8,Auto">
+                <TextBlock VerticalAlignment="Center" Text="硬件解码" />
+                <ComboBox Grid.Column="1" Width="280" HorizontalAlignment="Left" ItemsSource="{Binding HardwareDecodingOptions}" SelectedItem="{Binding SelectedHardwareDecoding}" />
+                <TextBlock Grid.Row="2" VerticalAlignment="Center" Text="音视频同步" />
+                <ComboBox Grid.Row="2" Grid.Column="1" Width="280" HorizontalAlignment="Left" ItemsSource="{Binding VideoSyncOptions}" SelectedItem="{Binding SelectedVideoSync}" />
+                <TextBlock Grid.Row="4" VerticalAlignment="Center" Text="反交错" />
+                <ComboBox Grid.Row="4" Grid.Column="1" Width="200" HorizontalAlignment="Left" ItemsSource="{Binding DeinterlaceOptions}" SelectedItem="{Binding SelectedDeinterlace}" />
+                <TextBlock Grid.Row="6" VerticalAlignment="Center" Text="退出时写入 mpv watch-later" />
+                <CheckBox Grid.Row="6" Grid.Column="1" Content="启用" IsChecked="{Binding SavePositionOnQuit}" />
+                <TextBlock Grid.Row="8" VerticalAlignment="Center" Text="自动恢复最近播放位置" />
+                <CheckBox Grid.Row="8" Grid.Column="1" Content="启用" IsChecked="{Binding ResumePlayback}" />
+                <TextBlock Grid.Row="10" VerticalAlignment="Center" Text="视频播放完毕" />
+                <ComboBox Grid.Row="10" Grid.Column="1" Width="200" HorizontalAlignment="Left" ItemsSource="{Binding PlaybackEndActionOptions}" SelectedItem="{Binding SelectedPlaybackEndAction}" />
+                <TextBlock Grid.Row="12" VerticalAlignment="Center" Text="进度条缩略图" />
+                <CheckBox x:Name="SeekPreviewEnabledCheckBox" Grid.Row="12" Grid.Column="1" Content="启用" IsChecked="{Binding SeekPreviewEnabled}" />
+                <TextBlock Grid.Row="14" VerticalAlignment="Center" Text="缩略图防抖（毫秒，0 实时）" />
+                <NumericUpDown Grid.Row="14" Grid.Column="1" Width="120" HorizontalAlignment="Left"
+                    AutomationProperties.Name="进度条缩略图延迟毫秒" ClipValueToMinMax="True" FormatString="0"
+                    Increment="10" Minimum="0" Maximum="10000" IsEnabled="{Binding #SeekPreviewEnabledCheckBox.IsChecked}"
+                    Value="{Binding SeekPreviewDelayMilliseconds}" />
+              </Grid>
+            </Border>
+
+            <TextBlock Margin="0,4,0,0" AutomationProperties.HeadingLevel="3" FontSize="17" FontWeight="SemiBold" Text="画面处理" />
+            <Border Classes="panel" Padding="14" DataContext="{Binding Settings.Mpv}">
+              <Grid ColumnDefinitions="190,*" RowDefinitions="Auto,8,Auto,8,Auto,8,Auto,8,Auto,8,Auto">
+                <TextBlock VerticalAlignment="Center" Text="亮度缩放算法" />
+                <ComboBox Grid.Column="1" Width="220" HorizontalAlignment="Left" ItemsSource="{Binding ScaleOptions}" SelectedItem="{Binding SelectedScale}" />
+                <TextBlock Grid.Row="2" VerticalAlignment="Center" Text="色度缩放算法" />
+                <ComboBox Grid.Row="2" Grid.Column="1" Width="220" HorizontalAlignment="Left" ItemsSource="{Binding ChromaScaleOptions}" SelectedItem="{Binding SelectedChromaScale}" />
+                <TextBlock Grid.Row="4" VerticalAlignment="Center" Text="缩小算法" />
+                <ComboBox Grid.Row="4" Grid.Column="1" Width="220" HorizontalAlignment="Left" ItemsSource="{Binding ScaleOptions}" SelectedItem="{Binding SelectedDownscale}" />
+                <TextBlock Grid.Row="6" VerticalAlignment="Center" Text="帧插值" />
+                <CheckBox Grid.Row="6" Grid.Column="1" Content="启用 interpolation" IsChecked="{Binding Interpolation}" />
+                <TextBlock Grid.Row="8" VerticalAlignment="Center" Text="去色带" />
+                <CheckBox Grid.Row="8" Grid.Column="1" Content="启用 deband" IsChecked="{Binding Deband}" />
+                <TextBlock Grid.Row="10" VerticalAlignment="Center" Text="Sigmoid 放大" />
+                <CheckBox Grid.Row="10" Grid.Column="1" Content="启用" IsChecked="{Binding SigmoidUpscaling}" />
+              </Grid>
+            </Border>
+
+            <TextBlock Margin="0,4,0,0" AutomationProperties.HeadingLevel="3" FontSize="17" FontWeight="SemiBold" Text="色彩与 HDR" />
+            <Border Classes="panel" Padding="14" DataContext="{Binding Settings.Mpv}">
+              <Grid ColumnDefinitions="190,*" RowDefinitions="Auto,8,Auto,8,Auto,8,Auto,8,Auto,8,Auto,8,Auto,8,Auto">
+                <TextBlock VerticalAlignment="Center" Text="输出色彩空间提示" />
+                <ComboBox Grid.Column="1" Width="260" HorizontalAlignment="Left" ItemsSource="{Binding TargetColorspaceHintOptions}" SelectedItem="{Binding SelectedTargetColorspaceHint}" />
+                <TextBlock Grid.Row="2" VerticalAlignment="Center" Text="提示来源" />
+                <ComboBox Grid.Row="2" Grid.Column="1" Width="260" HorizontalAlignment="Left" ItemsSource="{Binding TargetColorspaceHintModeOptions}" SelectedItem="{Binding SelectedTargetColorspaceHintMode}" />
+                <TextBlock Grid.Row="4" VerticalAlignment="Center" Text="目标色域" />
+                <ComboBox Grid.Row="4" Grid.Column="1" Width="220" HorizontalAlignment="Left" ItemsSource="{Binding TargetPrimariesOptions}" SelectedItem="{Binding SelectedTargetPrimaries}" />
+                <TextBlock Grid.Row="6" VerticalAlignment="Center" Text="目标传递函数" />
+                <ComboBox Grid.Row="6" Grid.Column="1" Width="220" HorizontalAlignment="Left" ItemsSource="{Binding TargetTransferOptions}" SelectedItem="{Binding SelectedTargetTransfer}" />
+                <TextBlock Grid.Row="8" VerticalAlignment="Center" Text="目标峰值亮度（nits）" />
+                <TextBox Grid.Row="8" Grid.Column="1" Width="100" HorizontalAlignment="Left" PlaceholderText="auto" Text="{Binding TargetPeak}" />
+                <TextBlock Grid.Row="10" VerticalAlignment="Center" Text="Tone mapping" />
+                <ComboBox Grid.Row="10" Grid.Column="1" Width="260" HorizontalAlignment="Left" ItemsSource="{Binding ToneMappingOptions}" SelectedItem="{Binding SelectedToneMapping}" />
+                <TextBlock Grid.Row="12" VerticalAlignment="Center" Text="色域映射" />
+                <ComboBox Grid.Row="12" Grid.Column="1" Width="260" HorizontalAlignment="Left" ItemsSource="{Binding GamutMappingOptions}" SelectedItem="{Binding SelectedGamutMappingMode}" />
+                <TextBlock Grid.Row="14" VerticalAlignment="Center" Text="动态 HDR 峰值分析" />
+                <ComboBox Grid.Row="14" Grid.Column="1" Width="220" HorizontalAlignment="Left" ItemsSource="{Binding HdrComputePeakOptions}" SelectedItem="{Binding SelectedHdrComputePeak}" />
+              </Grid>
+            </Border>
+
+            <TextBlock Margin="0,4,0,0" AutomationProperties.HeadingLevel="3" FontSize="17" FontWeight="SemiBold" Text="音频" />
+            <Border Classes="panel" Padding="14" DataContext="{Binding Settings.Mpv}">
+              <Grid ColumnDefinitions="190,*" RowDefinitions="Auto,8,Auto,8,Auto,8,Auto,8,Auto">
+                <TextBlock VerticalAlignment="Center" Text="输出设备" />
+                <TextBox Grid.Column="1" Width="300" HorizontalAlignment="Left" PlaceholderText="auto 或 ao/device" Text="{Binding AudioDevice}" />
+                <TextBlock Grid.Row="2" VerticalAlignment="Center" Text="声道布局" />
+                <ComboBox Grid.Row="2" Grid.Column="1" Width="220" HorizontalAlignment="Left" ItemsSource="{Binding AudioChannelOptions}" SelectedItem="{Binding SelectedAudioChannels}" />
+                <TextBlock Grid.Row="4" VerticalAlignment="Center" Text="独占输出" />
+                <CheckBox Grid.Row="4" Grid.Column="1" Content="启用（仅受支持的音频后端）" IsChecked="{Binding AudioExclusive}" />
+                <TextBlock Grid.Row="6" VerticalAlignment="Center" Text="变速音调校正" />
+                <CheckBox Grid.Row="6" Grid.Column="1" Content="启用" IsChecked="{Binding AudioPitchCorrection}" />
+                <TextBlock Grid.Row="8" VerticalAlignment="Center" Text="音轨语言优先级" />
+                <TextBox Grid.Row="8" Grid.Column="1" Width="300" HorizontalAlignment="Left" PlaceholderText="例如 zh-CN,zh,en" Text="{Binding AudioLanguages}" />
+              </Grid>
+            </Border>
+
+            <TextBlock Margin="0,4,0,0" AutomationProperties.HeadingLevel="3" FontSize="17" FontWeight="SemiBold" Text="字幕" />
+            <Border Classes="panel" Padding="14" DataContext="{Binding Settings.Mpv}">
+              <Grid ColumnDefinitions="190,*" RowDefinitions="Auto,8,Auto,8,Auto,8,Auto,8,Auto">
+                <TextBlock VerticalAlignment="Center" Text="首选字幕语言（从左到右）" />
+                <TextBox Grid.Column="1" Width="300" HorizontalAlignment="Left" PlaceholderText="zh-CN,zh-TW,en" Text="{Binding SubtitleLanguages}" />
+                <TextBlock Grid.Row="2" VerticalAlignment="Center" Text="自动加载外部字幕" />
+                <ComboBox Grid.Row="2" Grid.Column="1" Width="220" HorizontalAlignment="Left" ItemsSource="{Binding SubtitleAutoOptions}" SelectedItem="{Binding SelectedSubtitleAuto}" />
+                <TextBlock Grid.Row="4" VerticalAlignment="Center" Text="字体" />
+                <TextBox Grid.Row="4" Grid.Column="1" Width="260" HorizontalAlignment="Left" Text="{Binding SubtitleFont}" />
+                <TextBlock Grid.Row="6" VerticalAlignment="Center" Text="字号" />
+                <TextBox Grid.Row="6" Grid.Column="1" Width="90" HorizontalAlignment="Left" AutomationProperties.Name="字幕字号" Text="{Binding SubtitleFontSize}" />
+                <TextBlock Grid.Row="8" VerticalAlignment="Center" Text="随窗口缩放" />
+                <CheckBox Grid.Row="8" Grid.Column="1" Content="字幕随窗口尺寸缩放" IsChecked="{Binding SubtitleScaleWithWindow}" />
+              </Grid>
+            </Border>
+
+            <TextBlock Margin="0,4,0,0" AutomationProperties.HeadingLevel="3" FontSize="17" FontWeight="SemiBold" Text="网络与缓存" />
+            <Border Classes="panel" Padding="14" DataContext="{Binding Settings.Mpv}">
+              <Grid ColumnDefinitions="190,*" RowDefinitions="Auto,8,Auto,8,Auto,8,Auto,8,Auto,8,Auto,8,Auto,8,Auto">
+                <TextBlock VerticalAlignment="Center" Text="网络缓存" />
+                <ComboBox Grid.Column="1" Width="200" HorizontalAlignment="Left" ItemsSource="{Binding CacheOptions}" SelectedItem="{Binding SelectedCache}" />
+                <TextBlock Grid.Row="2" VerticalAlignment="Center" Text="预读时长上限（秒）" />
+                <TextBox Grid.Row="2" Grid.Column="1" Width="100" HorizontalAlignment="Left" Text="{Binding CacheSeconds}" />
+                <TextBlock Grid.Row="4" VerticalAlignment="Center" Text="向前缓存上限（MiB）" />
+                <TextBox Grid.Row="4" Grid.Column="1" Width="100" HorizontalAlignment="Left" Text="{Binding DemuxerMaxBytesMiB}" />
+                <TextBlock Grid.Row="6" VerticalAlignment="Center" Text="向后缓存上限（MiB）" />
+                <TextBox Grid.Row="6" Grid.Column="1" Width="100" HorizontalAlignment="Left" Text="{Binding DemuxerMaxBackBytesMiB}" />
+                <TextBlock Grid.Row="8" VerticalAlignment="Center" Text="缓存耗尽时自动暂停" />
+                <CheckBox Grid.Row="8" Grid.Column="1" Content="启用" IsChecked="{Binding CachePause}" />
+                <TextBlock Grid.Row="10" VerticalAlignment="Center" Text="播放前先缓冲" />
+                <CheckBox Grid.Row="10" Grid.Column="1" Content="启用" IsChecked="{Binding CachePauseInitial}" />
+                <TextBlock Grid.Row="12" VerticalAlignment="Center" Text="恢复播放缓存（秒）" />
+                <TextBox Grid.Row="12" Grid.Column="1" Width="100" HorizontalAlignment="Left" Text="{Binding CachePauseWaitSeconds}" />
+                <TextBlock Grid.Row="14" VerticalAlignment="Center" Text="网络超时（秒）" />
+                <TextBox Grid.Row="14" Grid.Column="1" Width="100" HorizontalAlignment="Left" Text="{Binding NetworkTimeoutSeconds}" />
+              </Grid>
+            </Border>
+
+            <TextBlock Margin="0,4,0,0" AutomationProperties.HeadingLevel="3" FontSize="17" FontWeight="SemiBold" Text="高级 mpv.conf" />
+            <Border Classes="panel" Padding="14" DataContext="{Binding Settings.Mpv}">
+              <Grid RowDefinitions="240,8,Auto">
+                <TextBox
+                    AcceptsReturn="True"
+                    AutomationProperties.Name="mpv 高级配置"
+                    FontFamily="monospace"
+                    PlaceholderText="# 示例&#x0a;profile=gpu-hq&#x0a;tone-mapping=auto"
+                    ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                    ScrollViewer.VerticalScrollBarVisibility="Auto"
+                    Text="{Binding AdvancedOptions}"
+                    TextWrapping="NoWrap"
+                    ToolTip.Tip="每行一个 option=value；常用设置优先" />
+                <TextBlock
+                    Grid.Row="2"
+                    Foreground="{DynamicResource CanXMutedTextBrush}"
+                    Text="保存后下次启动生效"
+                    TextWrapping="Wrap" />
+              </Grid>
+            </Border>
+
+            <controls:PluginContributionHost x:Name="PluginSettingsHost" Registry="{Binding Plugins.UiRegistry}" Slot="settings.plugins" />
+          </StackPanel>
+        </ScrollViewer>
+      </Grid>
+        </Grid>
+      </Grid>
+    </Border>
+
+    <Grid x:Name="ResizeLayer" ColumnDefinitions="4,*,4" RowDefinitions="10,*,10">
+      <Border x:Name="ResizeTop" Grid.Column="1" Height="4" VerticalAlignment="Top" Background="Transparent" Cursor="SizeNorthSouth" PointerPressed="OnResizeTop" />
+      <Border x:Name="ResizeBottom" Grid.Row="2" Grid.Column="1" Height="4" VerticalAlignment="Bottom" Background="Transparent" Cursor="SizeNorthSouth" PointerPressed="OnResizeBottom" />
+      <Border x:Name="ResizeLeft" Grid.Row="1" Background="Transparent" Cursor="SizeWestEast" PointerPressed="OnResizeLeft" />
+      <Border x:Name="ResizeRight" Grid.Row="1" Grid.Column="2" Background="Transparent" Cursor="SizeWestEast" PointerPressed="OnResizeRight" />
+
+      <Border x:Name="ResizeTopLeft" Background="Transparent" Cursor="TopLeftCorner" PointerPressed="OnResizeTopLeft" />
+      <Border x:Name="ResizeTopRight" Grid.Column="2" Background="Transparent" Cursor="TopRightCorner" PointerPressed="OnResizeTopRight" />
+      <Border x:Name="ResizeBottomLeft" Grid.Row="2" Background="Transparent" Cursor="BottomLeftCorner" PointerPressed="OnResizeBottomLeft" />
+      <Border x:Name="ResizeBottomRight" Grid.Row="2" Grid.Column="2" Background="Transparent" Cursor="BottomRightCorner" PointerPressed="OnResizeBottomRight" />
+    </Grid>
+
+    <Grid
+        x:Name="AddDownloadOverlay"
+        AutomationProperties.Name="添加下载任务遮罩层"
+        Background="#80000000"
+        IsVisible="False">
+      <local:AddDownloadTaskDialog
+          x:Name="AddDownloadTaskPanel"
+          Margin="24" />
+    </Grid>
+
+    <Grid
+        x:Name="AddPlaybackSourceOverlay"
+        AutomationProperties.Name="添加播放源遮罩层"
+        Background="#80000000"
+        IsVisible="False">
+      <local:AddPlaybackSourceDialog
+          x:Name="AddPlaybackSourcePanel"
+          Margin="24" />
+    </Grid>
+
+    <Grid
+        x:Name="PluginConfigurationOverlay"
+        AutomationProperties.Name="插件配置对话框"
+        Background="#80000000"
+        IsVisible="False">
+      <Border
+          Width="720"
+          MaxHeight="680"
+          Margin="24"
+          Padding="20"
+          HorizontalAlignment="Center"
+          VerticalAlignment="Center"
+          Background="{DynamicResource CanXPanelBrush}"
+          BorderBrush="{DynamicResource CanXBorderBrush}"
+          BorderThickness="1">
+        <Grid RowDefinitions="Auto,12,*,16,Auto">
+          <TextBlock
+              x:Name="PluginConfigurationTitle"
+              AutomationProperties.HeadingLevel="1"
+              FontSize="22"
+              FontWeight="SemiBold"
+              Text="插件配置" />
+          <Border Grid.Row="2" MinHeight="240" Padding="4">
+            <controls:PluginPageHost
+                x:Name="PluginConfigurationHost"
+                IsConfiguration="True" />
+          </Border>
+          <Button
+              Grid.Row="4"
+              MinWidth="88"
+              HorizontalAlignment="Right"
+              AutomationProperties.Name="关闭插件配置"
+              Click="OnClosePluginConfigurationClick"
+              Content="关闭" />
+        </Grid>
+      </Border>
+    </Grid>
+
+    <Border
+        x:Name="AutomationNotification"
+        MaxWidth="560"
+        Margin="20"
+        Padding="14,10"
+        HorizontalAlignment="Right"
+        VerticalAlignment="Bottom"
+        Background="{DynamicResource CanXPanelBrush}"
+        BorderBrush="{DynamicResource CanXBorderBrush}"
+        BorderThickness="1"
+        IsHitTestVisible="False"
+        IsVisible="False"
+        ZIndex="100">
+      <TextBlock
+          x:Name="AutomationNotificationText"
+          AutomationProperties.LiveSetting="Polite"
+          TextWrapping="Wrap" />
+    </Border>
+  </Grid>
+</Window>

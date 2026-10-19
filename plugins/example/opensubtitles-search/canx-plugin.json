@@ -1,0 +1,16 @@
+{
+  "manifestVersion": 1,
+  "id": "org.canx.examples.opensubtitles-search",
+  "name": "OpenSubtitles Search",
+  "description": "Searches OpenSubtitles and resolves a selected subtitle through the official API.",
+  "version": "1.3.0",
+  "apiVersion": "2.0",
+  "entry": "dist/main.js",
+  "configuration": { "title": "OpenSubtitles 字幕设置" },
+  "permissions": [
+    { "capability": "services.provide", "scopes": ["org.canx.subtitle.search", "org.canx.media.resolve"] },
+    { "capability": "http", "scopes": ["api.opensubtitles.com", "*.opensubtitles.com"] },
+    { "capability": "ui.configuration" },
+    { "capability": "secrets", "scopes": ["api-key"] }
+  ]
+}

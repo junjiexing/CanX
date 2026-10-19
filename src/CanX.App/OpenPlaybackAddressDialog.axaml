@@ -1,0 +1,50 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<Window
+    x:Class="CanX.App.OpenPlaybackAddressDialog"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="打开地址"
+    Icon="avares://CanX.App/Assets/CanXLogo.png"
+    Width="600"
+    SizeToContent="Height"
+    CanResize="False"
+    AutomationProperties.Name="打开播放地址"
+    WindowStartupLocation="CenterOwner">
+  <Border
+      x:Name="DialogFrame"
+      Background="{DynamicResource CanXBackgroundBrush}"
+      BorderBrush="{DynamicResource CanXBorderBrush}"
+      BorderThickness="1">
+    <Grid RowDefinitions="Auto,Auto,Auto">
+      <Border
+          x:Name="CustomTitleBar"
+          Height="30"
+          Background="{DynamicResource CanXTitleBarBrush}"
+          BorderBrush="{DynamicResource CanXBorderBrush}"
+          BorderThickness="0,0,0,1"
+          PointerPressed="OnTitleBarPointerPressed">
+        <Grid>
+          <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False" Text="打开地址" />
+          <Button HorizontalAlignment="Right" Classes="titlebar close" AutomationProperties.Name="关闭打开地址窗口" Click="OnCancelClick" />
+        </Grid>
+      </Border>
+      <StackPanel Grid.Row="1" Margin="20" Spacing="10">
+        <TextBlock Text="媒体地址" FontWeight="SemiBold" />
+        <TextBox
+            x:Name="AddressTextBox"
+            AutomationProperties.Name="媒体地址"
+            AcceptsReturn="False"
+            PlaceholderText="输入媒体地址，如 https://… 或 rtsp://…"
+            TextChanged="OnAddressTextChanged" />
+        <TextBlock Foreground="{DynamicResource CanXMutedTextBrush}" Text="支持 mpv 可播放的网络流和其他媒体地址。" TextWrapping="Wrap" />
+        <TextBlock x:Name="ErrorText" Foreground="{DynamicResource CanXDangerBrush}" IsVisible="False" TextWrapping="Wrap" />
+      </StackPanel>
+      <Border Grid.Row="2" Background="{DynamicResource CanXPanelBrush}" BorderBrush="{DynamicResource CanXBorderBrush}" BorderThickness="0,1,0,0" Padding="12">
+        <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Spacing="8">
+          <Button MinWidth="90" Click="OnCancelClick" Content="取消" IsCancel="True" />
+          <Button x:Name="OpenButton" MinWidth="90" Classes="accent" AutomationProperties.Name="确认打开地址" Click="OnOpenClick" Content="确定" IsDefault="True" IsEnabled="False" />
+        </StackPanel>
+      </Border>
+    </Grid>
+  </Border>
+</Window>

@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsAotCompatible>true</IsAotCompatible>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AngleSharp" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../CanX.Core/CanX.Core.csproj" />
+    <ProjectReference Include="../CanX.Streaming/CanX.Streaming.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="CanX.Plugins.Tests" />
+    <InternalsVisibleTo Include="CanX.Foundation.Tests" />
+    <InternalsVisibleTo Include="CanX.App" />
+  </ItemGroup>
+</Project>

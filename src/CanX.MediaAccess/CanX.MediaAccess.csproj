@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentFTP" />
+    <PackageReference Include="SMBLibrary" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../CanX.Core/CanX.Core.csproj" />
+    <ProjectReference Include="../CanX.Streaming/CanX.Streaming.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="CanX.Foundation.Tests" />
+  </ItemGroup>
+</Project>

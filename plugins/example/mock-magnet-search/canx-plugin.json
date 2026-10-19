@@ -1,0 +1,19 @@
+{
+  "manifestVersion": 1,
+  "id": "org.canx.examples.mock-magnet-search",
+  "name": "Mock Magnet Search",
+  "description": "Searches a local HTTP mock API and resolves results to Magnet downloads.",
+  "version": "1.5.0",
+  "apiVersion": "2.0",
+  "entry": "dist/main.js",
+  "ui": {
+    "title": "Magnet Search",
+    "icon": { "builtin": "search" }
+  },
+  "permissions": [
+    { "capability": "ui.page" },
+    { "capability": "downloads.prompt" },
+    { "capability": "http", "scopes": ["127.0.0.1"] },
+    { "capability": "storage" }
+  ]
+}

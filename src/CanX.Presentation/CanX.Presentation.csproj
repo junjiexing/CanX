@@ -1,0 +1,53 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="Avalonia.Controls.DataGrid" />
+    <PackageReference Include="Avalonia.Skia" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../CanX.Agent/CanX.Agent.csproj" />
+    <ProjectReference Include="../CanX.Application/CanX.Application.csproj" />
+    <ProjectReference Include="../CanX.Core/CanX.Core.csproj" />
+    <ProjectReference Include="../CanX.Downloads/CanX.Downloads.csproj" />
+    <ProjectReference Include="../CanX.Infrastructure/CanX.Infrastructure.csproj" />
+    <ProjectReference Include="../CanX.MediaAccess/CanX.MediaAccess.csproj" />
+    <ProjectReference Include="../CanX.Playback/CanX.Playback.csproj" />
+    <ProjectReference Include="../CanX.Plugins/CanX.Plugins.csproj" />
+    <ProjectReference Include="../CanX.Streaming/CanX.Streaming.csproj" />
+    <ProjectReference Include="../CanX.Tooling/CanX.Tooling.csproj" />
+  </ItemGroup>
+
+  <!-- These files remain physically beside the desktop views for now, but are
+       compiled once here so desktop and mobile hosts share the same state and
+       command implementation. -->
+  <ItemGroup>
+    <Compile Include="../CanX.App/ViewModels/**/*.cs" Link="ViewModels/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="../CanX.App/Controls/DownloadPieceMap.cs" Link="Controls/DownloadPieceMap.cs" />
+    <Compile Include="../CanX.App/Controls/PlaybackProgressPie.cs" Link="Controls/PlaybackProgressPie.cs" />
+    <Compile Include="../CanX.App/Controls/PlaybackChapterMarkers.cs" Link="Controls/PlaybackChapterMarkers.cs" />
+    <Compile Include="../CanX.App/Controls/MpvCompositionRenderWorker.cs" Link="Controls/MpvCompositionRenderWorker.cs" />
+    <Compile Include="../CanX.App/Controls/MpvCompositionSurface.cs" Link="Controls/MpvCompositionSurface.cs" />
+    <Compile Include="../CanX.App/Controls/MpvOpenGlRenderWorker.cs" Link="Controls/MpvOpenGlRenderWorker.cs" />
+    <Compile Include="../CanX.App/Controls/MpvOpenGlSync.cs" Link="Controls/MpvOpenGlSync.cs" />
+    <Compile Include="../CanX.App/Controls/MpvPresentationMetrics.cs" Link="Controls/MpvPresentationMetrics.cs" />
+    <Compile Include="../CanX.App/Controls/MpvVideoSurface.cs" Link="Controls/MpvVideoSurface.cs" />
+    <Compile Include="../CanX.App/Controls/MpvVideoSurfaceHost.cs" Link="Controls/MpvVideoSurfaceHost.cs" />
+    <Compile Include="../CanX.App/Controls/PluginContributionHost.cs" Link="Controls/PluginContributionHost.cs" />
+    <Compile Include="../CanX.App/Controls/PluginPageHost.cs" Link="Controls/PluginPageHost.cs" />
+    <Compile Include="../CanX.App/Automation/DesktopAutomationService.cs" Link="Automation/DesktopAutomationService.cs" />
+    <Compile Include="../CanX.App/PlaybackGestureCalculator.cs" Link="PlaybackGestureCalculator.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="CanX.App" />
+    <InternalsVisibleTo Include="CanX.App.Android" />
+    <InternalsVisibleTo Include="CanX.Foundation.Tests" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,56 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<Window
+    x:Class="CanX.App.ErrorMessageDialog"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="错误"
+    Icon="avares://CanX.App/Assets/CanXLogo.png"
+    Width="520"
+    Height="250"
+    CanResize="False"
+    AutomationProperties.Name="错误对话框"
+    WindowStartupLocation="CenterOwner">
+  <Border
+      x:Name="DialogFrame"
+      Background="{DynamicResource CanXBackgroundBrush}"
+      BorderBrush="{DynamicResource CanXBorderBrush}"
+      BorderThickness="1">
+    <Grid RowDefinitions="Auto,*,Auto">
+      <Border
+          x:Name="CustomTitleBar"
+          Height="30"
+          Background="{DynamicResource CanXTitleBarBrush}"
+          BorderBrush="{DynamicResource CanXBorderBrush}"
+          BorderThickness="0,0,0,1"
+          PointerPressed="OnTitleBarPointerPressed">
+        <Grid>
+          <Image
+              Width="16"
+              Height="16"
+              Margin="8,0,0,0"
+              HorizontalAlignment="Left"
+              VerticalAlignment="Center"
+              IsHitTestVisible="False"
+              Source="avares://CanX.App/Assets/CanXLogo.png"
+              Stretch="Uniform" />
+          <TextBlock x:Name="DialogTitleText" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False" />
+          <Button
+              HorizontalAlignment="Right"
+              Classes="titlebar close"
+              AutomationProperties.Name="关闭错误提示"
+              Click="OnCloseClick"
+              ToolTip.Tip="关闭" />
+        </Grid>
+      </Border>
+
+      <StackPanel Grid.Row="1" Margin="20,18" Spacing="12">
+        <TextBlock x:Name="HeadingText" FontSize="20" FontWeight="SemiBold" TextWrapping="Wrap" />
+        <TextBlock x:Name="MessageText" Foreground="{DynamicResource CanXMutedTextBrush}" TextWrapping="Wrap" />
+      </StackPanel>
+
+      <Border Grid.Row="2" Background="{DynamicResource CanXPanelBrush}" BorderBrush="{DynamicResource CanXBorderBrush}" BorderThickness="0,1,0,0" Padding="12">
+        <Button HorizontalAlignment="Right" MinWidth="90" Classes="accent" Click="OnCloseClick" Content="确定" IsDefault="True" />
+      </Border>
+    </Grid>
+  </Border>
+</Window>

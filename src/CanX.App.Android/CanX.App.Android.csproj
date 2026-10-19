@@ -1,0 +1,74 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-android</TargetFramework>
+    <SupportedOSPlatformVersion>23</SupportedOSPlatformVersion>
+    <ApplicationId>org.canx.app</ApplicationId>
+    <ApplicationTitle>CanX</ApplicationTitle>
+    <ApplicationVersion>1</ApplicationVersion>
+    <ApplicationDisplayVersion>0.1.0</ApplicationDisplayVersion>
+    <AndroidPackageFormat>apk</AndroidPackageFormat>
+    <PublishAot>true</PublishAot>
+    <TrimMode>full</TrimMode>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <!-- Android NativeAOT is still experimental in .NET 10. Mono.Android emits
+         IL3053 at assembly scope even when application code is AOT-safe. -->
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);IL2026;IL2070;IL2075;IL3050;IL3053;IL2104</WarningsNotAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Android" />
+    <PackageReference Include="Markdown.Avalonia.Tight" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(PublishAot)' == 'true'">
+    <TrimmerRootAssembly Include="Markdown.Avalonia" RootMode="All" />
+    <TrimmerRootAssembly Include="ColorDocument.Avalonia" RootMode="All" />
+    <TrimmerRootAssembly Include="ColorTextBlock.Avalonia" RootMode="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="../CanX.App/Assets/CanXLogo.png" Link="Assets/CanXLogo.png" />
+    <AndroidResource Include="../CanX.App/Assets/CanXLogo.png" Link="Resources/drawable/canx_logo.png" />
+    <Compile Include="../CanX.App/Controls/AgentMessageTextControls.cs" Link="Controls/AgentMessageTextControls.cs" />
+  </ItemGroup>
+
+  <!-- libaria2 remains statically linked with all of its native dependencies
+       inside this C-ABI sidecar. Keeping its C++ exception runtime isolated
+       avoids a libunwind collision with Android NativeAOT's monolithic image. -->
+  <ItemGroup Condition="'$(CanXAndroidAria2Library)' != ''">
+    <AndroidNativeLibrary Include="$(CanXAndroidAria2Library)" Abi="$(CanXAndroidAbi)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../CanX.Agent/CanX.Agent.csproj" />
+    <ProjectReference Include="../CanX.Application/CanX.Application.csproj" />
+    <ProjectReference Include="../CanX.Core/CanX.Core.csproj" />
+    <ProjectReference Include="../CanX.DesignSystem/CanX.DesignSystem.csproj" />
+    <ProjectReference Include="../CanX.Downloads/CanX.Downloads.csproj" />
+    <ProjectReference Include="../CanX.Infrastructure/CanX.Infrastructure.csproj" />
+    <ProjectReference Include="../CanX.MediaAccess/CanX.MediaAccess.csproj" />
+    <ProjectReference Include="../CanX.Playback/CanX.Playback.csproj" />
+    <ProjectReference Include="../CanX.Plugins/CanX.Plugins.csproj" />
+    <ProjectReference Include="../CanX.Presentation/CanX.Presentation.csproj" />
+    <ProjectReference Include="../CanX.Streaming/CanX.Streaming.csproj" />
+    <ProjectReference Include="../CanX.Tooling/CanX.Tooling.csproj" />
+  </ItemGroup>
+
+  <!--
+    System.Security.Cryptography.Native.Android implements certificate
+    validation through a Java native method. NativeAOT links that archive into
+    the application library, but its generated version script does not export
+    the JNI entry point, so linker section collection removes it. Keep and export
+    the entry point so HTTPS works from SocketsHttpHandler/SslStream.
+  -->
+  <Target Name="CanXExportAndroidCryptoTrustCallback"
+          BeforeTargets="WriteIlcRspFileForCompilation"
+          Condition="'$(PublishAot)' == 'true'">
+    <ItemGroup>
+      <IlcArg Include="--export-dynamic-symbol:Java_net_dot_android_crypto_DotnetProxyTrustManager_verifyRemoteCertificate" />
+      <LinkerArg Include="-Wl,--undefined=Java_net_dot_android_crypto_DotnetProxyTrustManager_verifyRemoteCertificate" />
+    </ItemGroup>
+  </Target>
+</Project>

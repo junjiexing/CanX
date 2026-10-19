@@ -1,0 +1,19 @@
+{
+  "manifestVersion": 1,
+  "id": "org.canx.seekurl",
+  "name": "SEEKURL for CanX",
+  "description": "Searches Xiuyun SEEKURL videos and plays selected resources and episodes in CanX.",
+  "version": "1.0.0",
+  "apiVersion": "2.0",
+  "entry": "dist/main.js",
+  "ui": {
+    "title": "SEEKURL",
+    "icon": { "builtin": "search" }
+  },
+  "permissions": [
+    { "capability": "ui.page" },
+    { "capability": "media.stream" },
+    { "capability": "services.provide", "scopes": ["org.canx.media.search", "org.canx.media.resolve"] },
+    { "capability": "http", "scopes": ["*"] }
+  ]
+}

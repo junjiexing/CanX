@@ -1,0 +1,16 @@
+{
+  "manifestVersion": 1,
+  "id": "org.canx.search.apibay",
+  "name": "apibay Torrent Search",
+  "description": "Headless BitTorrent search service backed by apibay.",
+  "version": "1.2.0",
+  "apiVersion": "2.0",
+  "entry": "dist/main.js",
+  "configuration": { "title": "apibay 设置" },
+  "permissions": [
+    { "capability": "services.provide", "scopes": ["org.canx.bittorrent.search"] },
+    { "capability": "http", "scopes": ["apibay.org", "127.0.0.1"] },
+    { "capability": "ui.configuration" },
+    { "capability": "storage" }
+  ]
+}

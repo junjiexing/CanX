@@ -1,0 +1,16 @@
+{
+  "manifestVersion": 1,
+  "id": "org.canx.search.knaben",
+  "name": "Knaben Torrent Search",
+  "description": "Headless BitTorrent search service backed by the public Knaben API.",
+  "version": "1.2.0",
+  "apiVersion": "2.0",
+  "entry": "dist/main.js",
+  "configuration": { "title": "Knaben 设置" },
+  "permissions": [
+    { "capability": "services.provide", "scopes": ["org.canx.bittorrent.search"] },
+    { "capability": "http", "scopes": ["api.knaben.org", "knaben.org", "knaben.xyz", "*.knaben.xyz", "127.0.0.1"] },
+    { "capability": "ui.configuration" },
+    { "capability": "storage" }
+  ]
+}

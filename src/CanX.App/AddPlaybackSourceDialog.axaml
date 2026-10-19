@@ -1,0 +1,161 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<UserControl
+    x:Class="CanX.App.AddPlaybackSourceDialog"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:CanX.App.ViewModels"
+    x:DataType="vm:AddPlaybackSourceViewModel"
+    MaxWidth="620"
+    MaxHeight="560"
+    HorizontalAlignment="Stretch"
+    VerticalAlignment="Center"
+    AutomationProperties.Name="添加播放源对话框">
+  <Border
+      x:Name="DialogFrame"
+      Background="{DynamicResource CanXBackgroundBrush}"
+      BorderBrush="{DynamicResource CanXBorderBrush}"
+      BorderThickness="1">
+    <Grid RowDefinitions="Auto,*,Auto">
+      <Border
+          Height="40"
+          Background="{DynamicResource CanXTitleBarBrush}"
+          BorderBrush="{DynamicResource CanXBorderBrush}"
+          BorderThickness="0,0,0,1">
+        <Grid>
+          <Image
+              Width="16"
+              Height="16"
+              Margin="8,0,0,0"
+              HorizontalAlignment="Left"
+              VerticalAlignment="Center"
+              IsHitTestVisible="False"
+              Source="avares://CanX.App/Assets/CanXLogo.png"
+              Stretch="Uniform" />
+          <TextBlock
+              Margin="32,0"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center"
+              FontWeight="SemiBold"
+              IsHitTestVisible="False"
+              Text="添加播放源" />
+          <Button
+              HorizontalAlignment="Right"
+              Classes="titlebar close"
+              AutomationProperties.Name="关闭添加播放源"
+              Click="OnCancelClick"
+              IsEnabled="{Binding !IsBusy}"
+              ToolTip.Tip="关闭" />
+        </Grid>
+      </Border>
+
+      <ScrollViewer Grid.Row="1" MaxHeight="430" HorizontalScrollBarVisibility="Disabled">
+        <Grid Margin="24,22" RowDefinitions="Auto,16,Auto,14,Auto,14,Auto,14,Auto">
+          <TextBlock FontSize="22" FontWeight="SemiBold" Text="新建播放源" />
+
+          <Grid Grid.Row="2" ColumnDefinitions="140,*">
+            <TextBlock VerticalAlignment="Center" FontWeight="SemiBold" Text="类型" />
+            <ComboBox
+                x:Name="SourceTypeComboBox"
+                Grid.Column="1"
+                AutomationProperties.Name="播放源类型"
+                IsEnabled="{Binding !IsBusy}"
+                ItemsSource="{Binding SourceTypes}"
+                SelectedItem="{Binding SelectedType, Mode=TwoWay}"
+                ToolTip.Tip="{Binding SourceDescription}" />
+          </Grid>
+
+          <Grid Grid.Row="4" ColumnDefinitions="140,*">
+            <TextBlock VerticalAlignment="Center" FontWeight="SemiBold" Text="名称（可选）" />
+            <TextBox
+                Grid.Column="1"
+                MaxLength="256"
+                AutomationProperties.Name="播放源名称"
+                IsEnabled="{Binding !IsBusy}"
+                PlaceholderText="未填写时自动生成"
+                Text="{Binding Name, Mode=TwoWay}" />
+          </Grid>
+
+          <Grid Grid.Row="6">
+            <Grid IsVisible="{Binding IsLocalFolder}" ColumnDefinitions="140,*,Auto">
+              <TextBlock VerticalAlignment="Center" FontWeight="SemiBold" Text="文件夹" />
+              <TextBox
+                  x:Name="LocalFolderTextBox"
+                  Grid.Column="1"
+                  AutomationProperties.Name="本地媒体文件夹"
+                  IsEnabled="{Binding !IsBusy}"
+                  PlaceholderText="选择本地媒体文件夹"
+                  Text="{Binding LocalFolder, Mode=TwoWay}" />
+              <Button
+                  Grid.Column="2"
+                  Margin="8,0,0,0"
+                  MinWidth="88"
+                  AutomationProperties.Name="浏览本地媒体文件夹"
+                  Click="OnBrowseFolderClick"
+                  Content="浏览…"
+                  IsEnabled="{Binding !IsBusy}" />
+            </Grid>
+
+            <Grid IsVisible="{Binding IsNetworkSource}" RowDefinitions="Auto,12,Auto,12,Auto" ColumnDefinitions="140,*">
+              <TextBlock VerticalAlignment="Center" FontWeight="SemiBold" Text="{Binding EndpointLabel}" />
+              <TextBox
+                  x:Name="EndpointTextBox"
+                  Grid.Column="1"
+                  AutomationProperties.Name="网络播放源地址"
+                  IsEnabled="{Binding !IsBusy}"
+                  PlaceholderText="{Binding EndpointPlaceholder}"
+                  Text="{Binding EndpointText, Mode=TwoWay}" />
+              <TextBlock Grid.Row="2" VerticalAlignment="Center" FontWeight="SemiBold" Text="用户名（可选）" />
+              <TextBox
+                  Grid.Row="2"
+                  Grid.Column="1"
+                  AutomationProperties.Name="网络播放源用户名"
+                  IsEnabled="{Binding !IsBusy}"
+                  Text="{Binding UserName, Mode=TwoWay}" />
+              <TextBlock Grid.Row="4" VerticalAlignment="Center" FontWeight="SemiBold" Text="密码（可选）" />
+              <TextBox
+                  Grid.Row="4"
+                  Grid.Column="1"
+                  AutomationProperties.Name="网络播放源密码"
+                  IsEnabled="{Binding !IsBusy}"
+                  PasswordChar="●"
+                  Text="{Binding Password, Mode=TwoWay}" />
+            </Grid>
+          </Grid>
+
+          <StackPanel Grid.Row="8" Spacing="10">
+            <TextBlock
+                x:Name="ErrorText"
+                AutomationProperties.LiveSetting="Assertive"
+                Foreground="{DynamicResource CanXDangerBrush}"
+                IsVisible="False"
+                TextWrapping="Wrap" />
+            <StackPanel Orientation="Horizontal" Spacing="10" IsVisible="{Binding IsBusy}">
+              <ProgressBar Width="120" Height="4" IsIndeterminate="True" />
+              <TextBlock VerticalAlignment="Center" Foreground="{DynamicResource CanXMutedTextBrush}" Text="正在验证并保存播放源…" />
+            </StackPanel>
+          </StackPanel>
+        </Grid>
+      </ScrollViewer>
+
+      <Border
+          Grid.Row="2"
+          Background="{DynamicResource CanXPanelBrush}"
+          BorderBrush="{DynamicResource CanXBorderBrush}"
+          BorderThickness="0,1,0,0"
+          Padding="12">
+        <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Spacing="8">
+          <Button MinWidth="90" Click="OnCancelClick" Content="取消" IsCancel="True" IsEnabled="{Binding !IsBusy}" />
+          <Button
+              MinWidth="100"
+              Classes="accent"
+              AutomationProperties.AcceleratorKey="Ctrl+Enter"
+              AutomationProperties.Name="确认添加播放源"
+              Click="OnAddClick"
+              Content="添加"
+              IsDefault="True"
+              IsEnabled="{Binding CanAdd}" />
+        </StackPanel>
+      </Border>
+    </Grid>
+  </Border>
+</UserControl>

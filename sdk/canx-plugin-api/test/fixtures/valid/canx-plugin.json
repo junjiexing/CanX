@@ -1,0 +1,8 @@
+{
+  "manifestVersion": 1,
+  "id": "org.canx.sdk-fixture",
+  "name": "SDK Fixture",
+  "version": "1.0.0",
+  "apiVersion": "2.0",
+  "entry": "main.mjs"
+}

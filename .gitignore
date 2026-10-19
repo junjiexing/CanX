@@ -1,0 +1,38 @@
+# .NET / Avalonia build outputs
+bin/
+obj/
+artifacts/
+TestResults/
+node_modules/
+plugins/**/dist/
+
+# The plugin SDK ships a Node CLI from a directory named `bin`. Keep that
+# source-controlled even though .NET build output directories use the same
+# name.
+!sdk/canx-plugin-api/bin/
+!sdk/canx-plugin-api/bin/canx-plugin.mjs
+
+# IDE and user-local state
+.idea/
+.vs/
+.vscode/
+*.user
+*.suo
+__pycache__/
+*.py[cod]
+
+# Native build outputs
+.cache/
+build/
+cmake-build-*/
+
+# Platform packaging/signing material
+*.pfx
+*.p12
+*.mobileprovision
+*.keystore
+*.jks
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,17 @@
+<Window
+    x:Class="CanX.Spikes.AvaloniaAot.MainWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="CanX Stage 0"
+    Width="720"
+    Height="420"
+    MinWidth="480"
+    MinHeight="280">
+  <Border Padding="36">
+    <StackPanel Spacing="12" VerticalAlignment="Center">
+      <TextBlock FontSize="30" FontWeight="SemiBold" Text="CanX" />
+      <TextBlock FontSize="18" Text="Avalonia + .NET 10 NativeAOT spike" />
+      <TextBlock Opacity="0.72" Text="If this window is visible, the managed UI and native platform backend initialized successfully." TextWrapping="Wrap" />
+    </StackPanel>
+  </Border>
+</Window>

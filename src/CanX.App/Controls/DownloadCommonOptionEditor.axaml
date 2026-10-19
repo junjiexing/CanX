@@ -1,0 +1,62 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<UserControl
+    x:Class="CanX.App.Controls.DownloadCommonOptionEditor"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:CanX.App.ViewModels"
+    x:DataType="vm:DownloadCommonOptionViewModel"
+    Width="{Binding EditorWidth}"
+    HorizontalAlignment="Left">
+  <Grid>
+    <TextBox
+        AcceptsReturn="False"
+        AutomationProperties.Name="{Binding Label}"
+        IsVisible="{Binding IsSingleLineTextEditor}"
+        PlaceholderText="{Binding Placeholder}"
+        Text="{Binding Value}" />
+    <TextBox
+        AcceptsReturn="True"
+        AutomationProperties.Name="{Binding Label}"
+        Height="72"
+        IsVisible="{Binding IsMultilineTextEditor}"
+        PlaceholderText="{Binding Placeholder}"
+        ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+        ScrollViewer.VerticalScrollBarVisibility="Auto"
+        Text="{Binding Value}"
+        TextWrapping="Wrap" />
+    <CheckBox
+        AutomationProperties.Name="{Binding Label}"
+        VerticalAlignment="Center"
+        Content="{Binding BooleanStateText}"
+        IsChecked="{Binding BooleanValue}"
+        IsThreeState="True"
+        IsVisible="{Binding IsBooleanEditor}" />
+    <TextBox
+        AutomationProperties.Name="{Binding Label}"
+        IsVisible="{Binding IsNumberEditor}"
+        PlaceholderText="{Binding Placeholder}"
+        Text="{Binding Value}" />
+    <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding IsUnitNumberEditor}">
+      <TextBox
+          AutomationProperties.Name="{Binding Label}"
+          PlaceholderText="{Binding Placeholder}"
+          Text="{Binding Value}" />
+      <TextBlock
+          Grid.Column="1"
+          Margin="8,0,0,0"
+          VerticalAlignment="Center"
+          Text="{Binding UnitLabel}" />
+    </Grid>
+    <ComboBox
+        AutomationProperties.Name="{Binding Label}"
+        IsVisible="{Binding IsChoiceEditor}"
+        ItemsSource="{Binding ChoiceItems}"
+        SelectedItem="{Binding SelectedChoice}">
+      <ComboBox.ItemTemplate>
+        <DataTemplate x:DataType="vm:DownloadOptionChoice">
+          <TextBlock Text="{Binding DisplayName}" />
+        </DataTemplate>
+      </ComboBox.ItemTemplate>
+    </ComboBox>
+  </Grid>
+</UserControl>

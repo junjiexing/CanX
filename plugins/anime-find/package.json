@@ -1,0 +1,17 @@
+{
+  "name": "canx-anime-find",
+  "version": "1.1.1",
+  "private": true,
+  "type": "module",
+  "files": ["dist", "README.md", "THIRD_PARTY_NOTICES.md"],
+  "scripts": {
+    "build": "tsc",
+    "lint": "canx-plugin lint .",
+    "test": "npm run build && node --test",
+    "pack:canx": "npm run build && canx-plugin pack ."
+  },
+  "devDependencies": {
+    "@canx/plugin-api": "file:../../sdk/canx-plugin-api",
+    "typescript": "^5.9.2"
+  }
+}

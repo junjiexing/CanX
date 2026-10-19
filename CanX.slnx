@@ -1,0 +1,31 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CanX.Agent/CanX.Agent.csproj" />
+    <Project Path="src/CanX.App/CanX.App.csproj" />
+    <Project Path="src/CanX.Application/CanX.Application.csproj" />
+    <Project Path="src/CanX.Core/CanX.Core.csproj" />
+    <Project Path="src/CanX.DesignSystem/CanX.DesignSystem.csproj" />
+    <Project Path="src/CanX.Downloads/CanX.Downloads.csproj" />
+    <Project Path="src/CanX.Infrastructure/CanX.Infrastructure.csproj" />
+    <Project Path="src/CanX.MediaAccess/CanX.MediaAccess.csproj" />
+    <Project Path="src/CanX.Playback/CanX.Playback.csproj" />
+    <Project Path="src/CanX.Plugins/CanX.Plugins.csproj" />
+    <Project Path="src/CanX.Streaming/CanX.Streaming.csproj" />
+    <Project Path="src/CanX.Tooling/CanX.Tooling.csproj" />
+  </Folder>
+  <Folder Name="/spikes/">
+    <Project Path="spikes/CanX.Spikes.AvaloniaAot/CanX.Spikes.AvaloniaAot.csproj" />
+    <Project Path="spikes/CanX.Spikes.Aria2Interop/CanX.Spikes.Aria2Interop.csproj" />
+    <Project Path="spikes/CanX.Spikes.MpvAvalonia/CanX.Spikes.MpvAvalonia.csproj" />
+    <Project Path="spikes/CanX.Spikes.Mobile.Android/CanX.Spikes.Mobile.Android.csproj" />
+    <Project Path="spikes/CanX.Spikes.QuickJsInterop/CanX.Spikes.QuickJsInterop.csproj" />
+    <Project Path="spikes/CanX.Spikes.Streaming/CanX.Spikes.Streaming.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CanX.Agent.Tests/CanX.Agent.Tests.csproj" />
+    <Project Path="tests/CanX.Downloads.Integration/CanX.Downloads.Integration.csproj" />
+    <Project Path="tests/CanX.Foundation.Tests/CanX.Foundation.Tests.csproj" />
+    <Project Path="tests/CanX.Plugins.Tests/CanX.Plugins.Tests.csproj" />
+    <Project Path="tests/CanX.SmbFixture/CanX.SmbFixture.csproj" />
+  </Folder>
+</Solution>

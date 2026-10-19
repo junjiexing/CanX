@@ -1,0 +1,75 @@
+name: Linux x64 release candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version without a leading v
+        required: true
+        type: string
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: linux-x64-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - name: Check out source
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Resolve release version
+        id: version
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" == tag ]]; then
+            version="${GITHUB_REF_NAME#v}"
+          else
+            version="${{ inputs.version }}"
+          fi
+          [[ "$version" =~ ^[0-9A-Za-z][0-9A-Za-z._+-]*$ ]]
+          printf 'value=%s\n' "$version" >> "$GITHUB_OUTPUT"
+
+      - name: Cache pinned native source and build outputs
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: |
+            .cache/static-native-ubuntu22.04
+            .cache/native/quickjs
+            .cache/nuget
+          key: linux-x64-jammy-${{ hashFiles('native/sources-linux-x64.lock', 'spikes/CanX.Spikes.QuickJsInterop/native-source.lock', 'scripts/build-static-native-linux-x64.sh', 'scripts/prepare-quickjs-spike.sh') }}
+
+      - name: Build, test, audit and package in Ubuntu 22.04
+        shell: bash
+        run: |
+          scripts/run-ubuntu-22.04-linux-x64.sh bash -lc '
+            set -euo pipefail
+            dotnet test tests/CanX.Foundation.Tests/CanX.Foundation.Tests.csproj -c Release
+            dotnet test tests/CanX.Plugins.Tests/CanX.Plugins.Tests.csproj -c Release
+            dotnet test tests/CanX.Agent.Tests/CanX.Agent.Tests.csproj -c Release
+            scripts/publish-static-app-linux-x64.sh
+            scripts/package-release-linux-x64.sh --version "$1"
+          ' bash '${{ steps.version.outputs.value }}'
+
+      - name: Verify release contents and checksums
+        shell: bash
+        run: scripts/verify-release-package-linux-x64.sh --version '${{ steps.version.outputs.value }}'
+
+      - name: Upload unsigned release candidate
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: CanX-${{ steps.version.outputs.value }}-linux-x64
+          path: artifacts/release/linux-x64/*
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0

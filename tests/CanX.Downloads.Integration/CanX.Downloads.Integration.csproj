@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <PublishAot>true</PublishAot>
+    <SelfContained>true</SelfContained>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/CanX.Core/CanX.Core.csproj" />
+    <ProjectReference Include="../../src/CanX.Application/CanX.Application.csproj" />
+    <ProjectReference Include="../../src/CanX.Downloads/CanX.Downloads.csproj" />
+  </ItemGroup>
+</Project>

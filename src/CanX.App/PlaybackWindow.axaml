@@ -1,0 +1,969 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<Window
+    x:Class="CanX.App.PlaybackWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:CanX.App.Controls"
+    xmlns:converters="using:Avalonia.Data.Converters"
+    xmlns:vm="using:CanX.App.ViewModels"
+    x:DataType="vm:PlaybackViewModel"
+    Title="CanX 播放器"
+    Icon="avares://CanX.App/Assets/CanXLogo.png"
+    Width="1200"
+    Height="760"
+    MinWidth="320"
+    MinHeight="200"
+    AutomationProperties.Name="CanX 播放器"
+    DragDrop.AllowDrop="True"
+    DragDrop.DragOver="OnPlaybackDragOver"
+    DragDrop.Drop="OnPlaybackDrop"
+    WindowStartupLocation="CenterScreen">
+  <Grid x:Name="PlaybackWindowRoot">
+    <Border
+        x:Name="WindowFrame"
+        Background="{DynamicResource CanXBackgroundBrush}"
+        BorderBrush="{DynamicResource CanXBorderBrush}"
+        BorderThickness="1">
+      <Grid RowDefinitions="Auto,*">
+        <Border
+            x:Name="CustomTitleBar"
+            Height="30"
+            Background="{DynamicResource CanXTitleBarBrush}"
+            BorderBrush="{DynamicResource CanXBorderBrush}"
+            BorderThickness="0,0,0,1"
+            PointerPressed="OnTitleBarPointerPressed">
+          <Grid>
+            <Image
+                Width="16"
+                Height="16"
+                Margin="8,0,0,0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                IsHitTestVisible="False"
+                Source="avares://CanX.App/Assets/CanXLogo.png"
+                Stretch="Uniform" />
+            <TextBlock
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                IsHitTestVisible="False"
+                Text="CanX 播放器" />
+            <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+              <Button Classes="titlebar minimize" AutomationProperties.Name="最小化播放器窗口" Click="OnMinimizeClick" ToolTip.Tip="最小化" />
+              <Button x:Name="MaximizeButton" Classes="titlebar maximize" AutomationProperties.Name="最大化播放器窗口" Click="OnMaximizeClick" ToolTip.Tip="最大化" />
+              <Button Classes="titlebar close" AutomationProperties.Name="关闭播放器窗口" Click="OnCloseClick" ToolTip.Tip="关闭" />
+            </StackPanel>
+          </Grid>
+        </Border>
+
+        <Grid x:Name="PlaybackView" Grid.Row="1">
+          <Border
+              x:Name="PlaybackVideoBorder"
+              Background="Black">
+            <Grid x:Name="VideoHost">
+              <controls:MpvVideoSurfaceHost x:Name="PlaybackVideoSurface" AutomationProperties.Name="视频画面" />
+              <StackPanel
+                  HorizontalAlignment="Center"
+                  VerticalAlignment="Center"
+                  IsHitTestVisible="False"
+                  IsVisible="{Binding !HasMedia}"
+                  Spacing="8">
+                <TextBlock HorizontalAlignment="Center" Foreground="#FFD0D0D0" FontSize="20" FontWeight="SemiBold" Text="暂无正在播放的媒体" />
+                <TextBlock HorizontalAlignment="Center" Foreground="#FF909090" Text="请从主窗口选择本地文件或媒体源" />
+              </StackPanel>
+              <Border
+                  x:Name="PluginPlaybackSidebar"
+                  Width="340"
+                  MaxHeight="520"
+                  Margin="12,48,12,140"
+                  HorizontalAlignment="Right"
+                  IsVisible="False"
+                  VerticalAlignment="Center"
+                  Focusable="True"
+                  Padding="12"
+                  Background="{DynamicResource CanXPanelBrush}"
+                  BorderBrush="{DynamicResource CanXBorderBrush}"
+                  BorderThickness="1"
+                  ZIndex="3">
+                <Grid RowDefinitions="Auto,8,*">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock VerticalAlignment="Center" FontSize="17" FontWeight="SemiBold" Text="插件面板" />
+                    <Button
+                        Grid.Column="1"
+                        Classes="player-control icon"
+                        AutomationProperties.Name="关闭播放器插件面板"
+                        Click="OnClosePluginSidebarClick"
+                        ToolTip.Tip="关闭插件面板">
+                      <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconClose}" />
+                    </Button>
+                  </Grid>
+                  <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                    <controls:PluginContributionHost
+                        x:Name="PluginPlaybackContributionHost"
+                        Slot="playback.sidebar" />
+                  </ScrollViewer>
+                </Grid>
+              </Border>
+              <controls:PluginContributionHost
+                  x:Name="PluginPlaybackStatusHost"
+                  Width="340"
+                  MaxHeight="220"
+                  Margin="12,48,12,140"
+                  HorizontalAlignment="Left"
+                  Slot="playback.status"
+                  VerticalAlignment="Top"
+                  ZIndex="3" />
+              <controls:PluginContributionHost
+                  x:Name="PluginPlaybackMenuHost"
+                  Width="340"
+                  MaxHeight="260"
+                  Margin="12,12,12,140"
+                  HorizontalAlignment="Left"
+                  Slot="menu.playback"
+                  VerticalAlignment="Bottom"
+                  ZIndex="3" />
+              <Border
+                  x:Name="GestureFeedback"
+                  MinWidth="150"
+                  Padding="18,12"
+                  HorizontalAlignment="Center"
+                  VerticalAlignment="Center"
+                  AutomationProperties.Name="播放手势反馈"
+                  Background="#D0181818"
+                  BorderBrush="#80606060"
+                  BorderThickness="1"
+                  IsHitTestVisible="False"
+                  IsVisible="False"
+                  ZIndex="2">
+                <TextBlock
+                    x:Name="GestureFeedbackText"
+                    HorizontalAlignment="Center"
+                    Foreground="#FFF2F2F2"
+                    FontSize="18"
+                    FontWeight="SemiBold"
+                    AutomationProperties.Name="播放手势反馈"
+                    TextAlignment="Center" />
+              </Border>
+              <Viewbox
+                  x:Name="PlaylistPanelHost"
+                  Margin="12,12,12,140"
+                  HorizontalAlignment="Right"
+                  VerticalAlignment="Bottom"
+                  IsVisible="False"
+                  Stretch="Uniform"
+                  StretchDirection="DownOnly"
+                  ZIndex="3">
+                <Border
+                    Width="460"
+                    Padding="16"
+                    AutomationProperties.Name="播放器播放列表面板"
+                    Background="#F0181818"
+                    BorderBrush="#80606060"
+                    BorderThickness="1">
+                  <Grid RowDefinitions="Auto,12,300,12,Auto">
+                    <Grid ColumnDefinitions="*,Auto,Auto">
+                      <TextBlock VerticalAlignment="Center" Foreground="#FFF2F2F2" FontSize="17" FontWeight="SemiBold" Text="播放列表" />
+                      <TextBlock Grid.Column="1" Margin="8,0" VerticalAlignment="Center" Foreground="#FFB8B8B8" Text="{Binding PlaylistSummary}" />
+                      <Button Grid.Column="2" Classes="player-control icon" AutomationProperties.Name="关闭播放器播放列表" Click="OnClosePlaylistPanelClick" ToolTip.Tip="关闭播放列表">
+                        <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconClose}" />
+                      </Button>
+                    </Grid>
+                    <ListBox
+                        x:Name="PlayerPlaylistList"
+                        Grid.Row="2"
+                        AutomationProperties.Name="播放器播放列表"
+                        DoubleTapped="OnPlayerPlaylistDoubleTapped"
+                        ItemsSource="{Binding PlaylistItems}"
+                        SelectedItem="{Binding SelectedPlaylistItem}">
+                      <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="vm:PlaybackPlaylistItemViewModel">
+                          <Grid MinHeight="46" ColumnDefinitions="28,*,Auto">
+                            <TextBlock VerticalAlignment="Center" Foreground="#FFB8B8B8" Text="{Binding NumberText}" />
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                              <TextBlock Foreground="#FFF2F2F2" FontWeight="SemiBold" Text="{Binding Title}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Title}" />
+                              <TextBlock FontSize="11" Foreground="#FFB8B8B8" Text="{Binding Source}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Source}" />
+                            </StackPanel>
+                            <TextBlock Grid.Column="2" Margin="8,0,0,0" VerticalAlignment="Center" Foreground="#FF2DA8FF" Text="{Binding StateText}" />
+                          </Grid>
+                        </DataTemplate>
+                      </ListBox.ItemTemplate>
+                    </ListBox>
+                    <StackPanel Grid.Row="4" HorizontalAlignment="Right" Orientation="Horizontal" Spacing="6">
+                      <Button Classes="player-control icon" AutomationProperties.Name="播放列表所选项" Click="OnPlaySelectedPlaylistItemClick" IsEnabled="{Binding CanPlaySelectedPlaylistItem}" ToolTip.Tip="播放所选列表项">
+                        <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconPlay}" />
+                      </Button>
+                      <Button Classes="player-control icon" AutomationProperties.Name="移除播放列表所选项" Click="OnRemoveSelectedPlaylistItemClick" IsEnabled="{Binding CanPlaySelectedPlaylistItem}" ToolTip.Tip="移除所选列表项">
+                        <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconDelete}" />
+                      </Button>
+                      <Button Classes="player-control icon" AutomationProperties.Name="清空待播列表" Click="OnClearPlayerPlaylistClick" IsEnabled="{Binding HasPlaylistItems}" ToolTip.Tip="清空待播列表">
+                        <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconClearAll}" />
+                      </Button>
+                    </StackPanel>
+                  </Grid>
+                </Border>
+              </Viewbox>
+              <Viewbox
+                  x:Name="ChapterBookmarkPanelHost"
+                  Margin="12,12,12,140"
+                  HorizontalAlignment="Right"
+                  VerticalAlignment="Bottom"
+                  IsVisible="False"
+                  Stretch="Uniform"
+                  StretchDirection="DownOnly"
+                  ZIndex="3">
+                <Border
+                    Width="760"
+                    Padding="16"
+                    AutomationProperties.Name="章节与书签面板"
+                    Background="#F0181818"
+                    BorderBrush="#80606060"
+                    BorderThickness="1">
+                  <Grid RowDefinitions="Auto,12,330">
+                    <Grid ColumnDefinitions="*,Auto">
+                      <TextBlock VerticalAlignment="Center" Foreground="#FFF2F2F2" FontSize="17" FontWeight="SemiBold" Text="章节与书签" />
+                      <Button
+                          Grid.Column="1"
+                          Classes="player-control icon"
+                          AutomationProperties.Name="关闭章节与书签"
+                          Click="OnCloseChapterBookmarkPanelClick"
+                          ToolTip.Tip="关闭章节与书签面板">
+                        <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconClose}" />
+                      </Button>
+                    </Grid>
+                    <Grid Grid.Row="2" ColumnDefinitions="*,12,*">
+                      <Grid RowDefinitions="Auto,8,*,8,Auto">
+                        <Grid ColumnDefinitions="*,Auto">
+                          <TextBlock Foreground="#FFF2F2F2" FontWeight="SemiBold" Text="章节" />
+                          <TextBlock Grid.Column="1" Foreground="#FFB8B8B8" Text="{Binding ChapterSummary}" />
+                        </Grid>
+                        <ListBox
+                            x:Name="ChapterList"
+                            Grid.Row="2"
+                            AutomationProperties.Name="章节列表"
+                            DoubleTapped="OnChapterDoubleTapped"
+                            ItemsSource="{Binding ChapterItems}"
+                            SelectedItem="{Binding SelectedChapterItem}">
+                          <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:PlaybackChapterItemViewModel">
+                              <Grid MinHeight="42" ColumnDefinitions="58,*,Auto">
+                                <TextBlock VerticalAlignment="Center" Foreground="#FFB8B8B8" Text="{Binding TimeText}" />
+                                <TextBlock Grid.Column="1" VerticalAlignment="Center" Foreground="#FFF2F2F2" Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
+                                <TextBlock Grid.Column="2" Margin="8,0,0,0" VerticalAlignment="Center" Foreground="#FF2DA8FF" Text="{Binding StateText}" />
+                              </Grid>
+                            </DataTemplate>
+                          </ListBox.ItemTemplate>
+                        </ListBox>
+                        <Button
+                            Grid.Row="4"
+                            HorizontalAlignment="Right"
+                            Classes="player-control icon"
+                            AutomationProperties.Name="跳转到所选章节"
+                            Click="OnOpenSelectedChapterClick"
+                            IsEnabled="{Binding CanOpenSelectedChapter}"
+                            ToolTip.Tip="跳转到所选章节">
+                          <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconGoTo}" />
+                        </Button>
+                      </Grid>
+                      <Grid Grid.Column="2" RowDefinitions="Auto,8,Auto,8,*,8,Auto">
+                        <Grid ColumnDefinitions="*,Auto">
+                          <TextBlock Foreground="#FFF2F2F2" FontWeight="SemiBold" Text="书签" />
+                          <TextBlock Grid.Column="1" Foreground="#FFB8B8B8" Text="{Binding BookmarkSummary}" />
+                        </Grid>
+                        <Grid Grid.Row="2" ColumnDefinitions="*,Auto">
+                          <TextBox
+                              x:Name="BookmarkTitleTextBox"
+                              MinHeight="34"
+                              VerticalContentAlignment="Center"
+                              AutomationProperties.Name="书签名称"
+                              PlaceholderText="可选名称"
+                              Text="{Binding BookmarkTitleText, Mode=TwoWay}" />
+                          <Button
+                              Grid.Column="1"
+                              Margin="6,0,0,0"
+                              Classes="player-control icon"
+                              AutomationProperties.Name="在当前位置添加书签"
+                              Click="OnAddBookmarkClick"
+                              IsEnabled="{Binding CanAddBookmark}"
+                              ToolTip.Tip="在当前位置添加书签">
+                            <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconAdd}" />
+                          </Button>
+                        </Grid>
+                        <ListBox
+                            x:Name="BookmarkList"
+                            Grid.Row="4"
+                            AutomationProperties.Name="书签列表"
+                            DoubleTapped="OnBookmarkDoubleTapped"
+                            ItemsSource="{Binding BookmarkItems}"
+                            SelectedItem="{Binding SelectedBookmarkItem}">
+                          <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:PlaybackBookmarkItemViewModel">
+                              <Grid MinHeight="46" ColumnDefinitions="58,*">
+                                <TextBlock VerticalAlignment="Center" Foreground="#FFB8B8B8" Text="{Binding PositionText}" />
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                  <TextBlock Foreground="#FFF2F2F2" FontWeight="SemiBold" Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
+                                  <TextBlock FontSize="11" Foreground="#FFB8B8B8" Text="{Binding CreatedAtText}" />
+                                </StackPanel>
+                              </Grid>
+                            </DataTemplate>
+                          </ListBox.ItemTemplate>
+                        </ListBox>
+                        <StackPanel Grid.Row="6" HorizontalAlignment="Right" Orientation="Horizontal" Spacing="6">
+                          <Button Classes="player-control icon" AutomationProperties.Name="跳转到所选书签" Click="OnOpenSelectedBookmarkClick" IsEnabled="{Binding CanOpenSelectedBookmark}" ToolTip.Tip="跳转到所选书签">
+                            <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconGoTo}" />
+                          </Button>
+                          <Button Classes="player-control icon" AutomationProperties.Name="重命名所选书签" Click="OnRenameSelectedBookmarkClick" IsEnabled="{Binding CanRenameSelectedBookmark}" ToolTip.Tip="重命名所选书签">
+                            <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconRename}" />
+                          </Button>
+                          <Button Classes="player-control icon" AutomationProperties.Name="移除所选书签" Click="OnRemoveSelectedBookmarkClick" IsEnabled="{Binding CanOpenSelectedBookmark}" ToolTip.Tip="移除所选书签">
+                            <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconDelete}" />
+                          </Button>
+                          <Button Classes="player-control icon" AutomationProperties.Name="清空当前媒体书签" Click="OnClearBookmarksClick" IsEnabled="{Binding HasBookmarks}" ToolTip.Tip="清空当前媒体书签">
+                            <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconClearAll}" />
+                          </Button>
+                        </StackPanel>
+                      </Grid>
+                    </Grid>
+                  </Grid>
+                </Border>
+              </Viewbox>
+              <Viewbox
+                  x:Name="TrackPanelHost"
+                  Margin="12,12,12,140"
+                  HorizontalAlignment="Right"
+                  VerticalAlignment="Bottom"
+                  IsVisible="False"
+                  Stretch="Uniform"
+                  StretchDirection="DownOnly"
+                  ZIndex="3">
+                <Border
+                    x:Name="TrackPanel"
+                    Width="420"
+                    Padding="16"
+                    AutomationProperties.Name="轨道与字幕面板"
+                    Background="#F0181818"
+                    BorderBrush="#80606060"
+                    BorderThickness="1">
+                  <Grid RowDefinitions="Auto,12,Auto,8,Auto,8,Auto,12,Auto,12,Auto,8,Auto,8,Auto">
+                    <Grid ColumnDefinitions="*,Auto">
+                      <TextBlock VerticalAlignment="Center" Foreground="#FFF2F2F2" FontSize="17" FontWeight="SemiBold" Text="轨道与字幕" />
+                      <Button
+                          Grid.Column="1"
+                          Classes="player-control icon"
+                          AutomationProperties.Name="关闭轨道与字幕面板"
+                          Click="OnCloseTrackPanelClick"
+                          ToolTip.Tip="关闭轨道与字幕面板">
+                        <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconClose}" />
+                      </Button>
+                    </Grid>
+
+                    <Grid Grid.Row="2" ColumnDefinitions="64,*">
+                      <TextBlock VerticalAlignment="Center" Foreground="#FFD0D0D0" Text="视频轨" />
+                      <ComboBox
+                          x:Name="VideoTrackComboBox"
+                          Grid.Column="1"
+                          AutomationProperties.Name="视频轨道"
+                          DropDownClosed="OnTrackDropDownClosed"
+                          IsEnabled="{Binding CanControl}"
+                          ItemsSource="{Binding VideoTrackChoices}"
+                          KeyUp="OnTrackKeyUp"
+                          SelectedItem="{Binding SelectedVideoTrack, Mode=OneWay}">
+                        <ComboBox.ItemTemplate>
+                          <DataTemplate x:DataType="vm:PlaybackTrackChoiceViewModel">
+                            <TextBlock Text="{Binding Label}" TextTrimming="CharacterEllipsis" />
+                          </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                      </ComboBox>
+                    </Grid>
+
+                    <Grid Grid.Row="4" ColumnDefinitions="64,*">
+                      <TextBlock VerticalAlignment="Center" Foreground="#FFD0D0D0" Text="音频轨" />
+                      <ComboBox
+                          x:Name="AudioTrackComboBox"
+                          Grid.Column="1"
+                          AutomationProperties.Name="音频轨道"
+                          DropDownClosed="OnTrackDropDownClosed"
+                          IsEnabled="{Binding CanControl}"
+                          ItemsSource="{Binding AudioTrackChoices}"
+                          KeyUp="OnTrackKeyUp"
+                          SelectedItem="{Binding SelectedAudioTrack, Mode=OneWay}">
+                        <ComboBox.ItemTemplate>
+                          <DataTemplate x:DataType="vm:PlaybackTrackChoiceViewModel">
+                            <TextBlock Text="{Binding Label}" TextTrimming="CharacterEllipsis" />
+                          </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                      </ComboBox>
+                    </Grid>
+
+                    <Grid Grid.Row="6" ColumnDefinitions="64,*,Auto,Auto">
+                      <TextBlock VerticalAlignment="Center" Foreground="#FFD0D0D0" Text="字幕轨" />
+                      <ComboBox
+                          x:Name="SubtitleTrackComboBox"
+                          Grid.Column="1"
+                          AutomationProperties.Name="字幕轨道"
+                          DropDownClosed="OnTrackDropDownClosed"
+                          IsEnabled="{Binding CanControl}"
+                          ItemsSource="{Binding SubtitleTrackChoices}"
+                          KeyUp="OnTrackKeyUp"
+                          SelectedItem="{Binding SelectedSubtitleTrack, Mode=OneWay}">
+                        <ComboBox.ItemTemplate>
+                          <DataTemplate x:DataType="vm:PlaybackTrackChoiceViewModel">
+                            <TextBlock Text="{Binding Label}" TextTrimming="CharacterEllipsis" />
+                          </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                      </ComboBox>
+                      <Button
+                          Grid.Column="2"
+                          Margin="8,0,0,0"
+                          Classes="player-control icon"
+                          AutomationProperties.Name="加载外部字幕"
+                          Click="OnAddSubtitleClick"
+                          IsEnabled="{Binding CanControl}"
+                          ToolTip.Tip="从本地文件夹或网络源加载字幕">
+                        <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconFolder}" />
+                      </Button>
+                      <Button
+                          Grid.Column="3"
+                          Margin="8,0,0,0"
+                          Classes="player-control icon"
+                          AutomationProperties.Name="在线搜索字幕"
+                          Click="OnSearchSubtitleClick"
+                          IsEnabled="{Binding CanControl}"
+                          ToolTip.Tip="通过字幕插件在线搜索">
+                        <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconSearch}" />
+                      </Button>
+                    </Grid>
+
+                    <Grid Grid.Row="8" ColumnDefinitions="*,Auto">
+                      <ComboBox
+                          x:Name="DiscoveredSubtitleComboBox"
+                          Margin="0,0,8,0"
+                          AutomationProperties.Name="其他匹配字幕"
+                          IsEnabled="{Binding CanControl}"
+                          IsVisible="{Binding HasDiscoveredSubtitleChoices}"
+                          ItemsSource="{Binding DiscoveredSubtitleChoices}"
+                          PlaceholderText="其他匹配字幕"
+                          SelectionChanged="OnDiscoveredSubtitleSelectionChanged">
+                        <ComboBox.ItemTemplate>
+                          <DataTemplate x:DataType="vm:DiscoveredSubtitleChoiceViewModel">
+                            <TextBlock Text="{Binding Label}" TextTrimming="CharacterEllipsis" />
+                          </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                      </ComboBox>
+                      <CheckBox
+                          x:Name="SubtitleVisibilityCheckBox"
+                          Grid.Column="1"
+                          VerticalAlignment="Center"
+                          AutomationProperties.Name="显示字幕"
+                          Click="OnSubtitleVisibilityClick"
+                          Content="显示字幕"
+                          IsChecked="{Binding IsSubtitleVisible, Mode=OneWay}"
+                          IsEnabled="{Binding CanControl}" />
+                    </Grid>
+
+                    <Grid Grid.Row="10" ColumnDefinitions="64,*,70">
+                      <TextBlock VerticalAlignment="Center" Foreground="#FFD0D0D0" Text="字幕延迟" />
+                      <Slider
+                          x:Name="SubtitleDelaySlider"
+                          Grid.Column="1"
+                          Margin="8,0"
+                          AutomationProperties.Name="字幕延迟"
+                          IsEnabled="{Binding CanControl}"
+                          LargeChange="1"
+                          Maximum="10"
+                          Minimum="-10"
+                          ValueChanged="OnSubtitleDelayChanged"
+                          SmallChange="0.1"
+                          TickFrequency="0.1"
+                          Value="{Binding SubtitleDelaySeconds, Mode=OneWay}" />
+                      <TextBlock Grid.Column="2" VerticalAlignment="Center" Foreground="#FFF2F2F2" Text="{Binding SubtitleDelayText}" TextAlignment="Right" />
+                    </Grid>
+
+                    <Grid Grid.Row="12" ColumnDefinitions="64,*,70">
+                      <TextBlock VerticalAlignment="Center" Foreground="#FFD0D0D0" Text="字幕大小" />
+                      <Slider
+                          x:Name="SubtitleScaleSlider"
+                          Grid.Column="1"
+                          Margin="8,0"
+                          AutomationProperties.Name="字幕大小"
+                          IsEnabled="{Binding CanControl}"
+                          LargeChange="0.25"
+                          Maximum="3"
+                          Minimum="0.25"
+                          ValueChanged="OnSubtitleScaleChanged"
+                          SmallChange="0.05"
+                          TickFrequency="0.05"
+                          Value="{Binding SubtitleScale, Mode=OneWay}" />
+                      <TextBlock Grid.Column="2" VerticalAlignment="Center" Foreground="#FFF2F2F2" Text="{Binding SubtitleScaleText}" TextAlignment="Right" />
+                    </Grid>
+
+                    <Grid Grid.Row="14" ColumnDefinitions="64,*,70">
+                      <TextBlock VerticalAlignment="Center" Foreground="#FFD0D0D0" Text="字幕位置" />
+                      <Slider
+                          x:Name="SubtitlePositionSlider"
+                          Grid.Column="1"
+                          Margin="8,0"
+                          AutomationProperties.Name="字幕位置"
+                          IsEnabled="{Binding CanControl}"
+                          LargeChange="10"
+                          Maximum="150"
+                          Minimum="0"
+                          ValueChanged="OnSubtitlePositionChanged"
+                          SmallChange="1"
+                          TickFrequency="1"
+                          Value="{Binding SubtitlePosition, Mode=OneWay}" />
+                      <TextBlock Grid.Column="2" VerticalAlignment="Center" Foreground="#FFF2F2F2" Text="{Binding SubtitlePositionText}" TextAlignment="Right" />
+                    </Grid>
+                  </Grid>
+                </Border>
+              </Viewbox>
+              <Viewbox
+                  x:Name="AdvancedPanelHost"
+                  Margin="12,12,12,140"
+                  HorizontalAlignment="Right"
+                  VerticalAlignment="Bottom"
+                  IsVisible="False"
+                  Stretch="Uniform"
+                  StretchDirection="DownOnly"
+                  ZIndex="3">
+                <Border
+                    Width="820"
+                    Padding="16"
+                    AutomationProperties.Name="高级播放面板"
+                    Background="#F0181818"
+                    BorderBrush="#80606060"
+                    BorderThickness="1">
+                  <Grid RowDefinitions="Auto,12,Auto,10,Auto,10,Auto,10,Auto,10,Auto,10,Auto">
+                    <Grid ColumnDefinitions="*,Auto">
+                      <TextBlock VerticalAlignment="Center" Foreground="#FFF2F2F2" FontSize="17" FontWeight="SemiBold" Text="高级播放" />
+                      <Button
+                          Grid.Column="1"
+                          Classes="player-control icon"
+                          AutomationProperties.Name="关闭高级播放面板"
+                          Click="OnCloseAdvancedPanelClick"
+                          ToolTip.Tip="关闭高级播放面板">
+                        <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconClose}" />
+                      </Button>
+                    </Grid>
+
+                    <Border Grid.Row="2" BorderBrush="#50606060" BorderThickness="0,1,0,0" Padding="0,10,0,0">
+                      <Grid ColumnDefinitions="100,Auto,Auto,18,Auto,Auto,Auto,*" ColumnSpacing="6">
+                        <TextBlock VerticalAlignment="Center" Foreground="#FFD0D0D0" FontWeight="SemiBold" Text="逐帧 / A-B" />
+                        <Button x:Name="PreviousFrameButton" Grid.Column="1" Classes="player-control icon" AutomationProperties.Name="后退一帧" Click="OnPreviousFrameClick" IsEnabled="{Binding CanControl}" ToolTip.Tip="后退一帧">
+                          <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconPrevious}" />
+                        </Button>
+                        <Button Grid.Column="2" Classes="player-control icon" AutomationProperties.Name="前进一帧" Click="OnNextFrameClick" IsEnabled="{Binding CanControl}" ToolTip.Tip="前进一帧">
+                          <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconNext}" />
+                        </Button>
+                        <Button Grid.Column="4" Classes="player-control icon" AutomationProperties.Name="设置A循环点" Click="OnSetAbLoopStartClick" IsEnabled="{Binding CanControl}" ToolTip.Tip="将当前位置设为 A 循环点">
+                          <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconLoopStart}" />
+                        </Button>
+                        <Button Grid.Column="5" Classes="player-control icon" AutomationProperties.Name="设置B循环点" Click="OnSetAbLoopEndClick" IsEnabled="{Binding CanControl}" ToolTip.Tip="将当前位置设为 B 循环点">
+                          <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconLoopEnd}" />
+                        </Button>
+                        <Button Grid.Column="6" Classes="player-control icon" AutomationProperties.Name="清除AB循环" Click="OnClearAbLoopClick" IsEnabled="{Binding CanControl}" ToolTip.Tip="清除 A-B 循环">
+                          <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconClose}" />
+                        </Button>
+                        <TextBlock Grid.Column="7" Margin="12,0,0,0" VerticalAlignment="Center" Foreground="#FFB8B8B8" Text="{Binding AbLoopText}" />
+                      </Grid>
+                    </Border>
+
+                    <Border Grid.Row="4" BorderBrush="#50606060" BorderThickness="0,1,0,0" Padding="0,10,0,0">
+                      <Grid ColumnDefinitions="100,Auto,Auto,Auto,*" ColumnSpacing="6">
+                        <TextBlock VerticalAlignment="Center" Foreground="#FFD0D0D0" FontWeight="SemiBold" Text="截图" />
+                        <Button Grid.Column="1" Classes="player-control icon" AutomationProperties.Name="截取含字幕画面" Click="OnScreenshotSubtitlesClick" IsEnabled="{Binding CanControl}" ToolTip.Tip="截取含字幕画面">
+                          <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconScreenshotSubtitles}" />
+                        </Button>
+                        <Button Grid.Column="2" Classes="player-control icon" AutomationProperties.Name="截取纯视频画面" Click="OnScreenshotVideoClick" IsEnabled="{Binding CanControl}" ToolTip.Tip="截取纯视频画面">
+                          <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconScreenshotVideo}" />
+                        </Button>
+                        <Button Grid.Column="3" Classes="player-control icon" AutomationProperties.Name="截取完整输出画面" Click="OnScreenshotWindowClick" IsEnabled="{Binding CanControl}" ToolTip.Tip="截取完整输出画面">
+                          <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconScreenshotWindow}" />
+                        </Button>
+                        <TextBlock Grid.Column="4" Margin="12,0,0,0" VerticalAlignment="Center" Foreground="#FFB8B8B8" Text="默认保存到 图片/CanX" />
+                      </Grid>
+                    </Border>
+
+                    <Border Grid.Row="6" BorderBrush="#50606060" BorderThickness="0,1,0,0" Padding="0,10,0,0">
+                      <Grid ColumnDefinitions="100,*">
+                        <TextBlock VerticalAlignment="Center" Foreground="#FFD0D0D0" FontWeight="SemiBold" Text="音频设备" />
+                        <ComboBox
+                            x:Name="AudioDeviceComboBox"
+                            Grid.Column="1"
+                            AutomationProperties.Name="音频输出设备"
+                            DropDownClosed="OnAudioDeviceDropDownClosed"
+                            IsEnabled="{Binding IsReady}"
+                            ItemsSource="{Binding AudioDeviceChoices}"
+                            KeyUp="OnAudioDeviceKeyUp"
+                            SelectedItem="{Binding SelectedAudioDevice, Mode=OneWay}">
+                          <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:PlaybackAudioDeviceChoiceViewModel">
+                              <TextBlock Text="{Binding Label}" TextTrimming="CharacterEllipsis" />
+                            </DataTemplate>
+                          </ComboBox.ItemTemplate>
+                        </ComboBox>
+                      </Grid>
+                    </Border>
+
+                    <Border Grid.Row="8" BorderBrush="#50606060" BorderThickness="0,1,0,0" Padding="0,10,0,0">
+                      <Grid ColumnDefinitions="100,*,Auto,Auto" ColumnSpacing="6">
+                        <TextBlock VerticalAlignment="Center" Foreground="#FFD0D0D0" FontWeight="SemiBold" Text="视频滤镜" />
+                        <TextBox x:Name="VideoFilterTextBox" Grid.Column="1" AutomationProperties.Name="视频滤镜表达式" PlaceholderText="例如 lavfi=[hflip]" Text="{Binding VideoFilterText, Mode=TwoWay}" />
+                        <Button Grid.Column="2" Classes="player-control icon" AutomationProperties.Name="应用视频滤镜" Click="OnApplyVideoFiltersClick" IsEnabled="{Binding CanControl}" ToolTip.Tip="应用视频滤镜">
+                          <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconApply}" />
+                        </Button>
+                        <Button Grid.Column="3" Classes="player-control icon" AutomationProperties.Name="清除视频滤镜" Click="OnClearVideoFiltersClick" IsEnabled="{Binding CanControl}" ToolTip.Tip="清除视频滤镜">
+                          <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconClearAll}" />
+                        </Button>
+                      </Grid>
+                    </Border>
+
+                    <Border Grid.Row="10" BorderBrush="#50606060" BorderThickness="0,1,0,0" Padding="0,10,0,0">
+                      <Grid ColumnDefinitions="100,*,Auto,Auto" ColumnSpacing="6">
+                        <TextBlock VerticalAlignment="Center" Foreground="#FFD0D0D0" FontWeight="SemiBold" Text="音频滤镜" />
+                        <TextBox x:Name="AudioFilterTextBox" Grid.Column="1" AutomationProperties.Name="音频滤镜表达式" PlaceholderText="例如 lavfi=[volume=0.9]" Text="{Binding AudioFilterText, Mode=TwoWay}" />
+                        <Button Grid.Column="2" Classes="player-control icon" AutomationProperties.Name="应用音频滤镜" Click="OnApplyAudioFiltersClick" IsEnabled="{Binding CanControl}" ToolTip.Tip="应用音频滤镜">
+                          <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconApply}" />
+                        </Button>
+                        <Button Grid.Column="3" Classes="player-control icon" AutomationProperties.Name="清除音频滤镜" Click="OnClearAudioFiltersClick" IsEnabled="{Binding CanControl}" ToolTip.Tip="清除音频滤镜">
+                          <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconClearAll}" />
+                        </Button>
+                      </Grid>
+                    </Border>
+
+                    <Border Grid.Row="12" BorderBrush="#50606060" BorderThickness="0,1,0,0" Padding="0,10,0,0">
+                      <Grid ColumnDefinitions="100,*,Auto" RowDefinitions="Auto,8,Auto">
+                        <TextBlock VerticalAlignment="Center" Foreground="#FFD0D0D0" FontWeight="SemiBold" Text="用户 Shader" />
+                        <ListBox
+                            x:Name="ShaderList"
+                            Grid.Column="1"
+                            Height="84"
+                            AutomationProperties.Name="用户Shader列表"
+                            ItemsSource="{Binding ShaderPaths}"
+                            SelectedItem="{Binding SelectedShaderPath}" />
+                        <StackPanel Grid.Column="2" Margin="8,0,0,0" Orientation="Vertical" Spacing="6">
+                          <Button Classes="player-control icon" AutomationProperties.Name="添加用户Shader" Click="OnAddShaderClick" IsEnabled="{Binding CanControl}" ToolTip.Tip="添加用户 Shader">
+                            <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconAdd}" />
+                          </Button>
+                          <Button Classes="player-control icon" AutomationProperties.Name="移除所选Shader" Click="OnRemoveShaderClick" IsEnabled="{Binding CanRemoveShader}" ToolTip.Tip="移除所选 Shader">
+                            <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconDelete}" />
+                          </Button>
+                          <Button Classes="player-control icon" AutomationProperties.Name="清空用户Shader" Click="OnClearShadersClick" IsEnabled="{Binding CanControl}" ToolTip.Tip="清空用户 Shader">
+                            <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconClearAll}" />
+                          </Button>
+                        </StackPanel>
+                      </Grid>
+                    </Border>
+                  </Grid>
+                </Border>
+              </Viewbox>
+              <Viewbox
+                  x:Name="DiagnosticsPanelHost"
+                  Margin="12,12,12,140"
+                  HorizontalAlignment="Right"
+                  VerticalAlignment="Bottom"
+                  IsVisible="False"
+                  Stretch="Uniform"
+                  StretchDirection="DownOnly"
+                  ZIndex="3">
+                <Border
+                    Width="940"
+                    Padding="16"
+                    AutomationProperties.Name="播放诊断面板"
+                    Background="#F0181818"
+                    BorderBrush="#80606060"
+                    BorderThickness="1">
+                  <Grid RowDefinitions="Auto,12,*">
+                    <Grid ColumnDefinitions="*,Auto">
+                      <TextBlock VerticalAlignment="Center" Foreground="#FFF2F2F2" FontSize="17" FontWeight="SemiBold" Text="播放诊断与运行时控制" />
+                      <Button
+                          Grid.Column="1"
+                          Classes="player-control icon"
+                          AutomationProperties.Name="关闭播放诊断面板"
+                          Click="OnCloseDiagnosticsPanelClick"
+                          ToolTip.Tip="关闭播放诊断面板">
+                        <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconClose}" />
+                      </Button>
+                    </Grid>
+                    <ScrollViewer Grid.Row="2" MaxHeight="600" VerticalScrollBarVisibility="Auto">
+                      <StackPanel Spacing="10">
+                        <TextBlock
+                            AutomationProperties.Name="mpv能力清单摘要"
+                            Foreground="#FFB8B8B8"
+                            Text="{Binding CapabilitySummary}"
+                            TextWrapping="Wrap" />
+                        <Border BorderBrush="#50606060" BorderThickness="0,1,0,0" Padding="0,10,0,0">
+                          <StackPanel Spacing="5">
+                            <TextBlock Foreground="#FFD0D0D0" FontWeight="SemiBold" Text="解码与渲染路径" />
+                            <TextBlock Foreground="#FFF2F2F2" FontFamily="monospace" Text="{Binding DecodePathText}" TextWrapping="Wrap" />
+                            <TextBlock Foreground="#FFF2F2F2" FontFamily="monospace" Text="{Binding RenderPathText}" TextWrapping="Wrap" />
+                            <TextBlock Foreground="#FFF2F2F2" FontFamily="monospace" Text="{Binding PresentationPathText}" TextWrapping="Wrap" />
+                            <TextBlock Foreground="#FFB8B8B8" FontFamily="monospace" Text="{Binding PresentationPerformanceText}" TextWrapping="Wrap" />
+                          </StackPanel>
+                        </Border>
+
+                        <Border BorderBrush="#50606060" BorderThickness="0,1,0,0" Padding="0,10,0,0">
+                          <StackPanel Spacing="5">
+                            <TextBlock Foreground="#FFD0D0D0" FontWeight="SemiBold" Text="色彩元数据" />
+                            <TextBlock Foreground="#FFF2F2F2" FontFamily="monospace" Text="{Binding InputColorText}" TextWrapping="Wrap" />
+                            <TextBlock Foreground="#FFF2F2F2" FontFamily="monospace" Text="{Binding TargetColorText}" TextWrapping="Wrap" />
+                          </StackPanel>
+                        </Border>
+
+                        <Border BorderBrush="#50606060" BorderThickness="0,1,0,0" Padding="0,10,0,0">
+                          <StackPanel Spacing="5">
+                            <TextBlock Foreground="#FFD0D0D0" FontWeight="SemiBold" Text="性能统计" />
+                            <TextBlock Foreground="#FFF2F2F2" FontFamily="monospace" Text="{Binding PerformanceText}" TextWrapping="Wrap" />
+                            <TextBlock Foreground="#FFF2F2F2" FontFamily="monospace" Text="{Binding FrameStatisticsText}" TextWrapping="Wrap" />
+                            <TextBlock Foreground="#FFF2F2F2" FontFamily="monospace" Text="{Binding BitrateCacheText}" TextWrapping="Wrap" />
+                          </StackPanel>
+                        </Border>
+
+                        <Border BorderBrush="#50606060" BorderThickness="0,1,0,0" Padding="0,10,0,0">
+                          <Grid ColumnDefinitions="125,220,125,220,*" RowDefinitions="Auto,8,Auto,8,Auto,8,Auto,8,Auto">
+                            <TextBlock Grid.ColumnSpan="5" Foreground="#FFD0D0D0" FontWeight="SemiBold" Text="色彩与 HDR（立即应用）" />
+                            <TextBlock Grid.Row="2" VerticalAlignment="Center" Foreground="#FFD0D0D0" Text="色彩空间提示" />
+                            <ComboBox x:Name="TargetColorspaceHintComboBox" Grid.Row="2" Grid.Column="1" ItemsSource="{Binding TargetColorspaceHintOptions}" SelectedItem="{Binding SelectedTargetColorspaceHint}" />
+                            <TextBlock Grid.Row="2" Grid.Column="2" Margin="12,0,0,0" VerticalAlignment="Center" Foreground="#FFD0D0D0" Text="提示来源" />
+                            <ComboBox Grid.Row="2" Grid.Column="3" ItemsSource="{Binding TargetColorspaceHintModeOptions}" SelectedItem="{Binding SelectedTargetColorspaceHintMode}" />
+                            <TextBlock Grid.Row="4" VerticalAlignment="Center" Foreground="#FFD0D0D0" Text="目标色域" />
+                            <ComboBox Grid.Row="4" Grid.Column="1" ItemsSource="{Binding TargetPrimariesOptions}" SelectedItem="{Binding SelectedTargetPrimaries}" />
+                            <TextBlock Grid.Row="4" Grid.Column="2" Margin="12,0,0,0" VerticalAlignment="Center" Foreground="#FFD0D0D0" Text="目标传递函数" />
+                            <ComboBox Grid.Row="4" Grid.Column="3" ItemsSource="{Binding TargetTransferOptions}" SelectedItem="{Binding SelectedTargetTransfer}" />
+                            <TextBlock Grid.Row="6" VerticalAlignment="Center" Foreground="#FFD0D0D0" Text="目标峰值（nits）" />
+                            <TextBox Grid.Row="6" Grid.Column="1" AutomationProperties.Name="运行时目标峰值" PlaceholderText="auto" Text="{Binding TargetPeakText}" />
+                            <TextBlock Grid.Row="6" Grid.Column="2" Margin="12,0,0,0" VerticalAlignment="Center" Foreground="#FFD0D0D0" Text="Tone mapping" />
+                            <ComboBox Grid.Row="6" Grid.Column="3" ItemsSource="{Binding ToneMappingOptions}" SelectedItem="{Binding SelectedToneMapping}" />
+                            <TextBlock Grid.Row="8" VerticalAlignment="Center" Foreground="#FFD0D0D0" Text="色域映射" />
+                            <ComboBox Grid.Row="8" Grid.Column="1" ItemsSource="{Binding GamutMappingOptions}" SelectedItem="{Binding SelectedGamutMappingMode}" />
+                            <TextBlock Grid.Row="8" Grid.Column="2" Margin="12,0,0,0" VerticalAlignment="Center" Foreground="#FFD0D0D0" Text="动态峰值" />
+                            <ComboBox Grid.Row="8" Grid.Column="3" ItemsSource="{Binding HdrComputePeakOptions}" SelectedItem="{Binding SelectedHdrComputePeak}" />
+                            <Button Grid.Row="8" Grid.Column="4" Margin="10,0,0,0" Classes="player-control icon" AutomationProperties.Name="应用色彩与HDR设置" Click="OnApplyColorSettingsClick" IsEnabled="{Binding IsReady}" ToolTip.Tip="应用色彩与 HDR 设置">
+                              <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconApply}" />
+                            </Button>
+                          </Grid>
+                        </Border>
+
+                        <Border BorderBrush="#50606060" BorderThickness="0,1,0,0" Padding="0,10,0,0">
+                          <Grid ColumnDefinitions="200,*,Auto,Auto" RowDefinitions="Auto,8,Auto">
+                            <TextBlock Grid.ColumnSpan="4" Foreground="#FFD0D0D0" FontWeight="SemiBold" Text="高级属性" />
+                            <TextBox x:Name="RuntimePropertyNameTextBox" Grid.Row="2" Width="200" HorizontalAlignment="Left" AutomationProperties.Name="mpv运行时属性名" PlaceholderText="属性名，例如 video-sync" Text="{Binding RuntimePropertyName}" />
+                            <TextBox x:Name="RuntimePropertyValueTextBox" Grid.Row="2" Grid.Column="1" Margin="8,0" AutomationProperties.Name="mpv运行时属性值" PlaceholderText="属性值" Text="{Binding RuntimePropertyValue}" />
+                            <Button Grid.Row="2" Grid.Column="2" Classes="player-control icon" AutomationProperties.Name="读取mpv运行时属性" Click="OnReadRuntimePropertyClick" IsEnabled="{Binding IsReady}" ToolTip.Tip="读取 mpv 运行时属性">
+                              <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconRefresh}" />
+                            </Button>
+                            <Button Grid.Row="2" Grid.Column="3" Margin="6,0,0,0" Classes="player-control icon" AutomationProperties.Name="写入mpv运行时属性" Click="OnWriteRuntimePropertyClick" IsEnabled="{Binding IsReady}" ToolTip.Tip="写入 mpv 运行时属性">
+                              <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconUpload}" />
+                            </Button>
+                          </Grid>
+                        </Border>
+
+                        <Border BorderBrush="#50606060" BorderThickness="0,1,0,0" Padding="0,10,0,0">
+                          <Grid ColumnDefinitions="200,*,Auto" RowDefinitions="Auto,8,80,8,Auto">
+                            <TextBlock Grid.ColumnSpan="3" Foreground="#FFD0D0D0" FontWeight="SemiBold" Text="高级命令" />
+                            <TextBox x:Name="RuntimeCommandNameTextBox" Grid.Row="2" VerticalAlignment="Bottom" AutomationProperties.Name="mpv运行时命令名" PlaceholderText="命令名，例如 show-text" Text="{Binding RuntimeCommandName}" />
+                            <TextBox x:Name="RuntimeCommandArgumentsTextBox" Grid.Row="2" Grid.Column="1" Margin="8,0" AcceptsReturn="True" AutomationProperties.Name="mpv运行时命令参数" PlaceholderText="每行一个参数" ScrollViewer.VerticalScrollBarVisibility="Auto" Text="{Binding RuntimeCommandArguments}" />
+                            <Button Grid.Row="2" Grid.Column="2" VerticalAlignment="Bottom" Classes="player-control icon" AutomationProperties.Name="执行mpv运行时命令" Click="OnExecuteRuntimeCommandClick" IsEnabled="{Binding IsReady}" ToolTip.Tip="执行 mpv 运行时命令">
+                              <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconPlay}" />
+                            </Button>
+                            <TextBlock Grid.Row="4" Grid.ColumnSpan="3" Foreground="#FFB8B8B8" Text="进程执行、文件读写、媒体加载、宿主退出及受保护属性变更已禁用；Tool 调用还需要危险操作授权。" TextWrapping="Wrap" />
+                          </Grid>
+                        </Border>
+
+                        <TextBlock AutomationProperties.LiveSetting="Polite" Foreground="#FFB8B8B8" IsVisible="{Binding HasAdvancedResult}" Text="{Binding AdvancedResult}" TextWrapping="Wrap" />
+                      </StackPanel>
+                    </ScrollViewer>
+                  </Grid>
+                </Border>
+              </Viewbox>
+              <Border
+                  x:Name="PlaybackOverlay"
+                  VerticalAlignment="Bottom"
+                  Background="#E0181818"
+                  BorderBrush="#604C4C4C"
+                  BorderThickness="0,1,0,0"
+                  Padding="12,10"
+                  Opacity="0"
+                  IsHitTestVisible="False"
+                  IsEnabled="False"
+                  ZIndex="1">
+                <Grid RowDefinitions="Auto,8,Auto,4,Auto">
+                  <Grid x:Name="PlaybackTimeline" ColumnDefinitions="Auto,*,Auto">
+                    <TextBlock Width="62" VerticalAlignment="Center" Foreground="#FFF2F2F2" Text="{Binding PositionText}" />
+                    <Grid x:Name="PlaybackSeekArea" Grid.Column="1" Margin="8,0">
+                      <Slider
+                          x:Name="PlaybackPositionSlider"
+                          VerticalAlignment="Center"
+                          AutomationProperties.Name="播放进度"
+                          IsEnabled="{Binding CanSeek}"
+                          Maximum="{Binding DurationMaximum}"
+                          Minimum="0"
+                          KeyDown="OnPlaybackPositionKeyDown"
+                          KeyUp="OnPlaybackPositionKeyUp"
+                          Value="0" />
+                      <controls:PlaybackChapterMarkers
+                          x:Name="PlaybackChapterMarkerOverlay"
+                          Chapters="{Binding ChapterItems}"
+                          DurationSeconds="{Binding DurationSeconds}" />
+                    </Grid>
+                    <TextBlock
+                        Grid.Column="2"
+                        Width="62"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Foreground="#FFF2F2F2"
+                        Text="{Binding DurationText}"
+                        TextAlignment="Right" />
+                  </Grid>
+
+                  <Viewbox
+                      Grid.Row="2"
+                      HorizontalAlignment="Center"
+                      Stretch="Uniform"
+                      StretchDirection="DownOnly">
+                    <StackPanel x:Name="PlaybackControls" Orientation="Horizontal" Spacing="12">
+                      <StackPanel Orientation="Horizontal" Spacing="4">
+                        <Button Classes="player-control icon" AutomationProperties.Name="播放上一项" Click="OnPlayPreviousClick" IsEnabled="{Binding CanPlayPrevious}" ToolTip.Tip="上一项">
+                          <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconPrevious}" />
+                        </Button>
+                        <Button Classes="player-control icon" AutomationProperties.Name="后退五秒" Click="OnSeekBackwardClick" IsEnabled="{Binding CanSeek}" ToolTip.Tip="后退 5 秒">
+                          <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconRewind}" />
+                        </Button>
+                        <!-- Reserve chapter button positions while metadata loads so nearby buttons never move under the pointer. -->
+                        <Button Classes="player-control icon" AutomationProperties.Name="上一章节" Click="OnSeekPreviousChapterClick" IsEnabled="{Binding CanSeekPreviousChapter}" ToolTip.Tip="上一章节 (PageDown)">
+                          <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconPreviousChapter}" />
+                        </Button>
+                        <Button Width="42" Height="42" MinWidth="42" MinHeight="42" Padding="10" Classes="player-control primary" AutomationProperties.Name="播放或暂停" Click="OnTogglePlaybackClick" IsEnabled="{Binding CanControl}" ToolTip.Tip="{Binding PlayPauseText}">
+                          <Grid>
+                            <PathIcon Width="20" Height="20" Data="{StaticResource CanXIconPause}" IsVisible="{Binding IsPlaying}" />
+                            <PathIcon Width="20" Height="20" Data="{StaticResource CanXIconPlay}" IsVisible="{Binding !IsPlaying}" />
+                          </Grid>
+                        </Button>
+                        <Button Classes="player-control icon" AutomationProperties.Name="前进五秒" Click="OnSeekForwardClick" IsEnabled="{Binding CanSeek}" ToolTip.Tip="前进 5 秒">
+                          <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconForward}" />
+                        </Button>
+                        <Button Classes="player-control icon" AutomationProperties.Name="下一章节" Click="OnSeekNextChapterClick" IsEnabled="{Binding CanSeekNextChapter}" ToolTip.Tip="下一章节 (PageUp)">
+                          <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconNextChapter}" />
+                        </Button>
+                        <Button Classes="player-control icon" AutomationProperties.Name="播放下一项" Click="OnPlayNextClick" IsEnabled="{Binding CanPlayNext}" ToolTip.Tip="下一项">
+                          <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconNext}" />
+                        </Button>
+                        <Button Classes="player-control icon" AutomationProperties.Name="停止播放" Click="OnStopPlaybackClick" IsEnabled="{Binding CanControl}" ToolTip.Tip="停止">
+                          <PathIcon Width="17" Height="17" Data="{StaticResource CanXIconStop}" />
+                        </Button>
+                        <Button Classes="player-control icon" AutomationProperties.Name="切换全屏" Click="OnToggleFullScreenClick" ToolTip.Tip="全屏">
+                          <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconFullscreen}" />
+                        </Button>
+                      </StackPanel>
+                      <StackPanel Orientation="Horizontal" Spacing="4">
+                        <Button Classes="player-control icon" AutomationProperties.Name="切换静音" Click="OnToggleMuteClick" IsEnabled="{Binding IsReady}" ToolTip.Tip="{Binding MuteText}">
+                          <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconVolume}" />
+                        </Button>
+                        <Slider
+                            x:Name="PlaybackVolumeSlider"
+                            Width="120"
+                            VerticalAlignment="Center"
+                            AutomationProperties.Name="音量"
+                            IsEnabled="{Binding IsReady}"
+                            Maximum="130"
+                            Minimum="0"
+                            ValueChanged="OnPlaybackVolumeValueChanged"
+                            Value="{Binding Volume, Mode=OneWay}" />
+                      </StackPanel>
+                      <StackPanel Orientation="Horizontal" Spacing="4">
+                        <Button Classes="player-control icon" AutomationProperties.Name="降低播放速度" Click="OnSpeedDecreaseClick" IsEnabled="{Binding CanDecreaseSpeed}" ToolTip.Tip="减慢 0.1x">
+                          <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconMinus}" />
+                        </Button>
+                        <TextBlock Width="44" VerticalAlignment="Center" Foreground="#FFF2F2F2" Text="{Binding SpeedText}" TextAlignment="Center" />
+                        <Button Classes="player-control icon" AutomationProperties.Name="提高播放速度" Click="OnSpeedIncreaseClick" IsEnabled="{Binding CanIncreaseSpeed}" ToolTip.Tip="加快 0.1x">
+                          <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconAdd}" />
+                        </Button>
+                      </StackPanel>
+                      <StackPanel Orientation="Horizontal" Spacing="4">
+                        <Button x:Name="PlaylistPanelButton" Classes="player-control icon" AutomationProperties.Name="播放器播放列表" Click="OnTogglePlaylistPanelClick" IsEnabled="{Binding IsReady}" ToolTip.Tip="播放列表">
+                          <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconPlaylist}" />
+                        </Button>
+                        <Button x:Name="TrackPanelButton" Classes="player-control icon" AutomationProperties.Name="轨道与字幕" Click="OnToggleTrackPanelClick" IsEnabled="{Binding IsReady}" ToolTip.Tip="轨道与字幕">
+                          <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconTracks}" />
+                        </Button>
+                        <Button x:Name="ChapterBookmarkPanelButton" Classes="player-control icon" AutomationProperties.Name="章节与书签" Click="OnToggleChapterBookmarkPanelClick" IsEnabled="{Binding IsReady}" ToolTip.Tip="章节与书签">
+                          <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconBookmark}" />
+                        </Button>
+                        <Button x:Name="AdvancedPanelButton" Classes="player-control icon" AutomationProperties.Name="高级播放" Click="OnToggleAdvancedPanelClick" IsEnabled="{Binding IsReady}" ToolTip.Tip="高级播放">
+                          <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconSettings}" />
+                        </Button>
+                        <Button x:Name="DiagnosticsPanelButton" Classes="player-control icon" AutomationProperties.Name="播放诊断" Click="OnToggleDiagnosticsPanelClick" IsEnabled="{Binding IsReady}" ToolTip.Tip="播放诊断">
+                          <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconDiagnostics}" />
+                        </Button>
+                        <!-- Keep the plugin slot stable if contributions become available after playback starts. -->
+                        <Button x:Name="PluginSidebarButton" Classes="player-control icon" AutomationProperties.Name="播放器插件面板" Click="OnTogglePluginSidebarClick" ToolTip.Tip="插件面板">
+                          <Button.IsEnabled>
+                            <MultiBinding Converter="{x:Static converters:BoolConverters.And}">
+                              <Binding Path="IsReady" />
+                              <Binding Path="#PluginPlaybackContributionHost.IsVisible" />
+                            </MultiBinding>
+                          </Button.IsEnabled>
+                          <PathIcon Width="18" Height="18" Data="{StaticResource CanXIconPlugin}" />
+                        </Button>
+                      </StackPanel>
+                    </StackPanel>
+                  </Viewbox>
+                  <Grid Grid.Row="4" ColumnDefinitions="2*,*">
+                    <StackPanel VerticalAlignment="Center">
+                      <TextBlock Foreground="#FFF2F2F2" FontWeight="SemiBold" Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
+                      <TextBlock FontSize="11" Foreground="#FFB8B8B8" Text="{Binding MediaDetails}" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                    <TextBlock
+                        Grid.Column="1"
+                        VerticalAlignment="Center"
+                        HorizontalAlignment="Right"
+                        AutomationProperties.LiveSetting="Polite"
+                        Foreground="#FFB8B8B8"
+                        Text="{Binding StatusMessage}"
+                        TextTrimming="CharacterEllipsis"
+                        ToolTip.Tip="{Binding StatusMessage}" />
+                  </Grid>
+                </Grid>
+              </Border>
+              <Border
+                  x:Name="SeekPreviewBubble"
+                  Width="224"
+                  Padding="4,4,4,5"
+                  HorizontalAlignment="Left"
+                  VerticalAlignment="Top"
+                  AutomationProperties.Name="进度预览"
+                  Background="#F0181818"
+                  BorderBrush="#A0FFFFFF"
+                  BorderThickness="1"
+                  IsHitTestVisible="False"
+                  IsVisible="False"
+                  ZIndex="5">
+                <StackPanel Spacing="4">
+                  <Border x:Name="SeekPreviewFrame" Height="120" Background="Black" ClipToBounds="True" IsVisible="False">
+                    <Image x:Name="SeekPreviewImage" Stretch="Uniform" />
+                  </Border>
+                  <TextBlock
+                      x:Name="SeekPreviewTimeText"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Center"
+                      Foreground="White"
+                      FontSize="12"
+                      FontWeight="SemiBold" />
+                </StackPanel>
+              </Border>
+            </Grid>
+          </Border>
+        </Grid>
+      </Grid>
+    </Border>
+
+    <Grid x:Name="ResizeLayer" ColumnDefinitions="4,*,4" RowDefinitions="10,*,10">
+      <Border Grid.Column="1" Height="4" VerticalAlignment="Top" Background="Transparent" Cursor="SizeNorthSouth" PointerPressed="OnResizeTop" />
+      <Border Grid.Row="2" Grid.Column="1" Height="4" VerticalAlignment="Bottom" Background="Transparent" Cursor="SizeNorthSouth" PointerPressed="OnResizeBottom" />
+      <Border Grid.Row="1" Background="Transparent" Cursor="SizeWestEast" PointerPressed="OnResizeLeft" />
+      <Border Grid.Row="1" Grid.Column="2" Background="Transparent" Cursor="SizeWestEast" PointerPressed="OnResizeRight" />
+      <Border Background="Transparent" Cursor="TopLeftCorner" PointerPressed="OnResizeTopLeft" />
+      <Border Grid.Column="2" Background="Transparent" Cursor="TopRightCorner" PointerPressed="OnResizeTopRight" />
+      <Border Grid.Row="2" Background="Transparent" Cursor="BottomLeftCorner" PointerPressed="OnResizeBottomLeft" />
+      <Border Grid.Row="2" Grid.Column="2" Background="Transparent" Cursor="BottomRightCorner" PointerPressed="OnResizeBottomRight" />
+    </Grid>
+  </Grid>
+</Window>

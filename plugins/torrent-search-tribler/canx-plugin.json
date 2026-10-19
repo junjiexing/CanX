@@ -1,0 +1,17 @@
+{
+  "manifestVersion": 1,
+  "id": "org.canx.search.tribler",
+  "name": "Tribler Torrent Search",
+  "description": "Headless local-index search service for the Tribler REST API.",
+  "version": "1.2.0",
+  "apiVersion": "2.0",
+  "entry": "dist/main.js",
+  "configuration": { "title": "Tribler 设置" },
+  "permissions": [
+    { "capability": "services.provide", "scopes": ["org.canx.bittorrent.search"] },
+    { "capability": "http", "scopes": ["127.0.0.1"] },
+    { "capability": "ui.configuration" },
+    { "capability": "storage" },
+    { "capability": "secrets", "scopes": ["api-key"] }
+  ]
+}

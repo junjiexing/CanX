@@ -1,0 +1,53 @@
+{
+  "manifestVersion": 1,
+  "id": "org.canx.anime-find",
+  "name": "Anime Find for CanX",
+  "description": "Searches anime metadata, BitTorrent releases, and static-rule streaming sources from a native CanX page and AI Tools.",
+  "version": "1.1.1",
+  "apiVersion": "2.0",
+  "entry": "dist/main.js",
+  "ui": {
+    "title": "搜番",
+    "icon": { "builtin": "search" }
+  },
+  "configuration": {
+    "title": "搜番设置"
+  },
+  "permissions": [
+    {
+      "capability": "services.provide",
+      "scopes": [
+        "org.canx.anime.search",
+        "org.canx.anime.detail",
+        "org.canx.bittorrent.search",
+        "org.canx.media.search",
+        "org.canx.media.resolve"
+      ]
+    },
+    { "capability": "ui.page" },
+    { "capability": "ui.configuration" },
+    { "capability": "ui.remoteImages", "scopes": ["*"] },
+    { "capability": "downloads.prompt" },
+    { "capability": "media.stream" },
+    { "capability": "storage" },
+    {
+      "capability": "http",
+      "scopes": [
+        "mikanani.me",
+        "anibt.net",
+        "api.animes.garden",
+        "api.bgm.tv",
+        "next.bgm.tv",
+        "bgm.tv",
+        "lain.bgm.tv",
+        "dm1.xfdm.pro",
+        "xfvod.pro",
+        "*.xfvod.pro",
+        "moedot.net",
+        "*.moedot.net",
+        "pan.wo.cn",
+        "*.pan.wo.cn"
+      ]
+    }
+  ]
+}

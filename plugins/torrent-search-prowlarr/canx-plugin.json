@@ -1,0 +1,17 @@
+{
+  "manifestVersion": 1,
+  "id": "org.canx.search.prowlarr",
+  "name": "Prowlarr Torrent Search",
+  "description": "Headless search service for a local Prowlarr instance.",
+  "version": "1.2.0",
+  "apiVersion": "2.0",
+  "entry": "dist/main.js",
+  "configuration": { "title": "Prowlarr 设置" },
+  "permissions": [
+    { "capability": "services.provide", "scopes": ["org.canx.bittorrent.search"] },
+    { "capability": "http", "scopes": ["127.0.0.1"] },
+    { "capability": "ui.configuration" },
+    { "capability": "storage" },
+    { "capability": "secrets", "scopes": ["api-key"] }
+  ]
+}

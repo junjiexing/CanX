@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PublishAot>true</PublishAot>
+    <SelfContained>true</SelfContained>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/CanX.Core/CanX.Core.csproj" />
+    <ProjectReference Include="../../src/CanX.Plugins/CanX.Plugins.csproj" />
+    <ProjectReference Include="../../src/CanX.Streaming/CanX.Streaming.csproj" />
+  </ItemGroup>
+</Project>

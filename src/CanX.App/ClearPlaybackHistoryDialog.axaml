@@ -1,0 +1,43 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<Window
+    x:Class="CanX.App.ClearPlaybackHistoryDialog"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="清空播放历史"
+    Icon="avares://CanX.App/Assets/CanXLogo.png"
+    Width="480"
+    Height="205"
+    CanResize="False"
+    AutomationProperties.Name="清空播放历史确认"
+    WindowStartupLocation="CenterOwner">
+  <Border
+      x:Name="DialogFrame"
+      Background="{DynamicResource CanXBackgroundBrush}"
+      BorderBrush="{DynamicResource CanXBorderBrush}"
+      BorderThickness="1">
+    <Grid RowDefinitions="Auto,*,Auto">
+      <Border
+          x:Name="CustomTitleBar"
+          Height="30"
+          Background="{DynamicResource CanXTitleBarBrush}"
+          BorderBrush="{DynamicResource CanXBorderBrush}"
+          BorderThickness="0,0,0,1"
+          PointerPressed="OnTitleBarPointerPressed">
+        <Grid>
+          <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False" Text="清空播放历史" />
+          <Button HorizontalAlignment="Right" Classes="titlebar close" AutomationProperties.Name="关闭确认窗口" Click="OnCancelClick" />
+        </Grid>
+      </Border>
+      <StackPanel Grid.Row="1" Margin="20,18" Spacing="10">
+        <TextBlock FontSize="20" FontWeight="SemiBold" Text="清空全部播放历史？" />
+        <TextBlock Foreground="{DynamicResource CanXMutedTextBrush}" Text="播放记录和续播位置将被删除，媒体文件仍会保留。" TextWrapping="Wrap" />
+      </StackPanel>
+      <Border Grid.Row="2" Background="{DynamicResource CanXPanelBrush}" BorderBrush="{DynamicResource CanXBorderBrush}" BorderThickness="0,1,0,0" Padding="12">
+        <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Spacing="8">
+          <Button MinWidth="90" Click="OnCancelClick" Content="取消" IsCancel="True" IsDefault="True" />
+          <Button MinWidth="90" Classes="danger" Click="OnConfirmClick" Content="清空" />
+        </StackPanel>
+      </Border>
+    </Grid>
+  </Border>
+</Window>

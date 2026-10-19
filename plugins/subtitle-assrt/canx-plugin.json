@@ -1,0 +1,16 @@
+{
+  "manifestVersion": 1,
+  "id": "org.canx.subtitle.assrt",
+  "name": "ASSRT 字幕",
+  "description": "通过 ASSRT API 搜索字幕，并在播放前获取临时下载地址。",
+  "version": "1.1.1",
+  "apiVersion": "2.0",
+  "entry": "dist/main.js",
+  "configuration": { "title": "ASSRT 字幕设置" },
+  "permissions": [
+    { "capability": "services.provide", "scopes": ["org.canx.subtitle.search", "org.canx.media.resolve"] },
+    { "capability": "http", "scopes": ["api.assrt.net"] },
+    { "capability": "ui.configuration" },
+    { "capability": "secrets", "scopes": ["token"] }
+  ]
+}

@@ -1,0 +1,87 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<Window
+    x:Class="CanX.App.SubtitlePickerDialog"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:media="using:CanX.MediaAccess"
+    xmlns:discovery="using:CanX.Application.Discovery"
+    Title="选择字幕"
+    Icon="avares://CanX.App/Assets/CanXLogo.png"
+    Width="640"
+    Height="550"
+    MinWidth="420"
+    MinHeight="390"
+    AutomationProperties.Name="选择字幕"
+    WindowStartupLocation="CenterOwner">
+  <Border x:Name="DialogFrame" Background="{DynamicResource CanXBackgroundBrush}" BorderBrush="{DynamicResource CanXBorderBrush}" BorderThickness="1">
+    <Grid RowDefinitions="Auto,*,Auto">
+      <Border x:Name="CustomTitleBar" Height="30" Background="{DynamicResource CanXTitleBarBrush}" BorderBrush="{DynamicResource CanXBorderBrush}" BorderThickness="0,0,0,1" PointerPressed="OnTitleBarPointerPressed">
+        <Grid>
+          <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False" Text="选择字幕" />
+          <Button HorizontalAlignment="Right" Classes="titlebar close" AutomationProperties.Name="关闭字幕选择" Click="OnCancelClick" />
+        </Grid>
+      </Border>
+      <Grid Grid.Row="1" Margin="18" RowDefinitions="Auto,10,Auto,10,*" ColumnDefinitions="*">
+        <Grid ColumnDefinitions="Auto,*,Auto">
+          <TextBlock VerticalAlignment="Center" Text="位置" Margin="0,0,10,0" />
+          <ComboBox x:Name="SourceComboBox" Grid.Column="1" AutomationProperties.Name="字幕来源" />
+          <Button Grid.Column="2" Margin="10,0,0,0" Click="OnPickLocalClick" Content="浏览本地…" AutomationProperties.Name="浏览本地字幕文件" />
+        </Grid>
+        <Grid x:Name="NetworkNavigation" Grid.Row="2" ColumnDefinitions="Auto,*" IsVisible="False">
+          <Button x:Name="UpButton" Click="OnUpClick" Content="上级" AutomationProperties.Name="字幕上级目录" />
+          <TextBlock x:Name="LocationText" Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource CanXMutedTextBrush}" TextTrimming="CharacterEllipsis" />
+        </Grid>
+        <Grid Grid.Row="4">
+          <TextBlock x:Name="LocalHint" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource CanXMutedTextBrush}" Text="从视频所在文件夹或其他本地文件夹选择字幕" />
+          <ListBox x:Name="SubtitleList" IsVisible="False" AutomationProperties.Name="网络源字幕文件列表" DoubleTapped="OnSubtitleDoubleTapped">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="media:MediaResource">
+                <StackPanel Margin="6,9" Orientation="Horizontal" Spacing="8">
+                  <PathIcon Width="16" Height="16" Data="{StaticResource CanXIconFolder}" IsVisible="{Binding IsDirectory}" />
+                  <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+          <Grid x:Name="OnlineSearchPanel" IsVisible="False" RowDefinitions="Auto,8,Auto,8,*,Auto">
+            <Grid ColumnDefinitions="Auto,*">
+              <TextBlock VerticalAlignment="Center" Text="搜索接口" Margin="0,0,10,0" />
+              <ComboBox x:Name="OnlineProviderComboBox" Grid.Column="1" AutomationProperties.Name="字幕搜索接口" SelectionChanged="OnOnlineProviderSelectionChanged" />
+            </Grid>
+            <Grid Grid.Row="2" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+              <TextBox x:Name="OnlineQueryBox" PlaceholderText="搜索视频名称" AutomationProperties.Name="在线字幕关键词" KeyDown="OnOnlineQueryKeyDown" />
+              <Button x:Name="OnlineSearchButton" Grid.Column="1" Content="搜索" Classes="accent" Click="OnOnlineSearchClick" />
+            </Grid>
+            <ListBox x:Name="OnlineResultList" Grid.Row="4" AutomationProperties.Name="在线字幕搜索结果" SelectionChanged="OnOnlineResultSelectionChanged">
+              <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="discovery:OnlineSubtitleResult">
+                  <StackPanel Margin="6,8" Spacing="3">
+                    <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{Binding Details}" FontSize="12" Foreground="{DynamicResource CanXMutedTextBrush}" TextTrimming="CharacterEllipsis" />
+                  </StackPanel>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+            <StackPanel Grid.Row="5" x:Name="OnlineSourcesPanel" IsVisible="False" Spacing="5" Margin="0,8,0,0">
+              <TextBlock Text="选择字幕文件" Foreground="{DynamicResource CanXMutedTextBrush}" />
+              <ListBox x:Name="OnlineSourceList" MaxHeight="112" AutomationProperties.Name="在线字幕文件" SelectionChanged="OnOnlineSourceSelectionChanged">
+                <ListBox.ItemTemplate>
+                  <DataTemplate x:DataType="discovery:OnlineSubtitleSource">
+                    <TextBlock Text="{Binding Name}" Margin="6,8" TextTrimming="CharacterEllipsis" />
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+            </StackPanel>
+          </Grid>
+        </Grid>
+      </Grid>
+      <Border Grid.Row="2" Background="{DynamicResource CanXPanelBrush}" BorderBrush="{DynamicResource CanXBorderBrush}" BorderThickness="0,1,0,0" Padding="12">
+        <Grid ColumnDefinitions="*,Auto,Auto">
+          <TextBlock x:Name="StatusText" VerticalAlignment="Center" Foreground="{DynamicResource CanXMutedTextBrush}" TextTrimming="CharacterEllipsis" />
+          <Button Grid.Column="1" Margin="0,0,8,0" MinWidth="80" Click="OnCancelClick" Content="取消" IsCancel="True" />
+          <Button x:Name="LoadButton" Grid.Column="2" MinWidth="80" Classes="accent" Click="OnLoadClick" Content="加载" IsEnabled="False" />
+        </Grid>
+      </Border>
+    </Grid>
+  </Border>
+</Window>

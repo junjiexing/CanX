@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://canx.example/schemas/plugin-manifest-v1.json",
+  "title": "CanX Plugin Manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["manifestVersion", "id", "name", "version", "apiVersion", "entry"],
+  "properties": {
+    "manifestVersion": { "const": 1 },
+    "id": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^[a-z0-9](?:[a-z0-9-]{0,62})(?:\\.[a-z0-9](?:[a-z0-9-]{0,62})){1,7}$"
+    },
+    "name": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "description": { "type": "string", "maxLength": 500 },
+    "version": {
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"
+    },
+    "apiVersion": { "const": "2.0" },
+    "entry": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*[\\\\:])(?!.*//).+\\.m?js$"
+    },
+    "ui": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "icon"],
+      "properties": {
+        "title": { "type": "string", "minLength": 1, "maxLength": 32 },
+        "icon": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["builtin"],
+              "properties": {
+                "builtin": {
+                  "enum": [
+                    "plugin", "home", "search", "globe", "library", "folder", "file", "link",
+                    "download", "upload", "play", "music", "video", "subtitles", "image",
+                    "list", "grid", "history", "favorite", "settings", "tools", "info", "warning"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["asset"],
+              "properties": {
+                "asset": {
+                  "type": "string",
+                  "maxLength": 256,
+                  "pattern": "^assets/(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*[\\\\:])(?!.*//).+\\.(?:png|jpg|jpeg|webp)$"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "configuration": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "title": { "type": "string", "minLength": 1, "maxLength": 48 }
+      }
+    },
+    "permissions": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["capability"],
+        "properties": {
+          "capability": {
+            "enum": [
+              "tools.invoke",
+              "services.provide",
+              "services.invoke",
+              "ui.page",
+              "ui.contribute",
+              "ui.configuration",
+              "ui.remoteImages",
+              "playback.read",
+              "playback.control",
+              "downloads.read",
+              "downloads.manage",
+              "downloads.prompt",
+              "media.stream",
+              "http",
+              "storage",
+              "secrets"
+            ]
+          },
+          "scopes": {
+            "type": "array",
+            "maxItems": 128,
+            "uniqueItems": true,
+            "items": { "type": "string", "minLength": 1, "maxLength": 256 }
+          }
+        }
+      }
+    }
+  }
+}

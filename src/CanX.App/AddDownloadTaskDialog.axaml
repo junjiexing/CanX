@@ -1,0 +1,199 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<UserControl
+    x:Class="CanX.App.AddDownloadTaskDialog"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:CanX.App.ViewModels"
+    x:DataType="vm:AddDownloadTaskViewModel"
+    MaxWidth="760"
+    MaxHeight="540"
+    HorizontalAlignment="Stretch"
+    VerticalAlignment="Center"
+    AutomationProperties.Name="添加下载任务对话框"
+    DragDrop.AllowDrop="True"
+    DragDrop.DragOver="OnDragOver"
+    DragDrop.Drop="OnDrop">
+  <Grid>
+    <Border
+      x:Name="DialogFrame"
+      Background="{DynamicResource CanXBackgroundBrush}"
+      BorderBrush="{DynamicResource CanXBorderBrush}"
+      BorderThickness="1">
+    <Grid RowDefinitions="Auto,*,Auto">
+      <Border
+          Height="40"
+          Background="{DynamicResource CanXTitleBarBrush}"
+          BorderBrush="{DynamicResource CanXBorderBrush}"
+          BorderThickness="0,0,0,1">
+        <Grid>
+          <Image
+              Width="16"
+              Height="16"
+              Margin="8,0,0,0"
+              HorizontalAlignment="Left"
+              VerticalAlignment="Center"
+              IsHitTestVisible="False"
+              Source="avares://CanX.App/Assets/CanXLogo.png"
+              Stretch="Uniform" />
+          <TextBlock Margin="32,0" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold" IsHitTestVisible="False" Text="添加下载任务" />
+          <Button
+              HorizontalAlignment="Right"
+              Classes="titlebar close"
+              AutomationProperties.Name="关闭添加任务"
+              Click="OnCancelClick"
+              ToolTip.Tip="关闭" />
+        </Grid>
+      </Border>
+
+      <Grid Grid.Row="1" Margin="24,22">
+        <Grid IsVisible="{Binding IsSourceStep}" RowDefinitions="Auto,18,Auto,12,Auto,*">
+          <TextBlock FontSize="22" FontWeight="SemiBold" Text="新建下载" />
+          <Grid Grid.Row="2" ColumnDefinitions="*,Auto">
+            <TextBox
+                x:Name="DownloadSourceTextBox"
+                MinHeight="36"
+                VerticalContentAlignment="Center"
+                AutomationProperties.AcceleratorKey="Ctrl+L"
+                AutomationProperties.Name="下载地址或种子文件"
+                IsEnabled="{Binding !IsBusy}"
+                PlaceholderText="URL、Magnet 或本地种子文件"
+                Text="{Binding SourceText, Mode=TwoWay}" />
+            <Button
+                Grid.Column="1"
+                Margin="8,0,0,0"
+                MinWidth="92"
+                AutomationProperties.Name="浏览种子文件"
+                Click="OnBrowseSourceClick"
+                Content="浏览…"
+                IsEnabled="{Binding !IsBusy}" />
+          </Grid>
+          <StackPanel Grid.Row="4" Orientation="Horizontal" Spacing="10" IsVisible="{Binding IsBusy}">
+            <ProgressBar Width="120" Height="4" MinWidth="0" IsIndeterminate="True" />
+            <TextBlock VerticalAlignment="Center" Foreground="{DynamicResource CanXMutedTextBrush}" Text="{Binding BusyText}" />
+          </StackPanel>
+        </Grid>
+
+        <Grid IsVisible="{Binding IsDetailsStep}" RowDefinitions="Auto,18,Auto,12,Auto,12,*">
+          <TextBlock FontSize="22" FontWeight="SemiBold" Text="确认下载内容" />
+
+          <Border Grid.Row="2" Classes="panel" Padding="14">
+            <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,6,Auto">
+              <TextBlock Foreground="{DynamicResource CanXMutedTextBrush}" Text="名称" />
+              <TextBlock Grid.Column="1" Margin="16,0,0,0" FontWeight="SemiBold" Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis" />
+              <TextBlock Grid.Row="2" Foreground="{DynamicResource CanXMutedTextBrush}" Text="类型 / 大小" />
+              <TextBlock Grid.Row="2" Grid.Column="1" Margin="16,0,0,0">
+                <Run Text="{Binding SourceType}" /><Run Text="  ·  " /><Run Text="{Binding TotalSize}" />
+              </TextBlock>
+            </Grid>
+          </Border>
+
+          <Grid Grid.Row="4" ColumnDefinitions="*,Auto">
+            <TextBox
+                AutomationProperties.Name="下载目录"
+                PlaceholderText="下载目录"
+                Text="{Binding DestinationDirectory, Mode=TwoWay}" />
+            <Button Grid.Column="1" Margin="8,0,0,0" Click="OnBrowseDestinationClick" Content="选择目录…" />
+          </Grid>
+
+          <Grid Grid.Row="6" RowDefinitions="Auto,10,*">
+            <TextBox
+                IsVisible="{Binding ShowOutputName}"
+                AutomationProperties.Name="输出文件名"
+                PlaceholderText="输出文件名"
+                Text="{Binding OutputName, Mode=TwoWay}" />
+            <Grid IsVisible="{Binding ShowFileList}" RowDefinitions="Auto,8,*">
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock VerticalAlignment="Center" FontSize="15" FontWeight="SemiBold" Text="文件内容" />
+                <CheckBox Grid.Column="1" Content="全选" IsChecked="{Binding AllFilesSelected, Mode=TwoWay}" />
+              </Grid>
+              <DataGrid
+                  Grid.Row="2"
+                  AutoGenerateColumns="False"
+                  CanUserReorderColumns="False"
+                  CanUserResizeColumns="True"
+                  CanUserSortColumns="False"
+                  GridLinesVisibility="Horizontal"
+                  IsReadOnly="False"
+                  ItemsSource="{Binding Files}"
+                  SelectionMode="Single">
+                <DataGrid.Columns>
+                  <DataGridCheckBoxColumn Width="54" Header="下载" Binding="{Binding IsSelected, Mode=TwoWay}" />
+                  <DataGridTextColumn Width="*" Header="文件" Binding="{Binding Path}" IsReadOnly="True" />
+                  <DataGridTextColumn Width="90" Header="大小" Binding="{Binding Size}" IsReadOnly="True" />
+                  <DataGridTemplateColumn Width="100" Header="优先级">
+                    <DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate>
+                        <ComboBox
+                            HorizontalContentAlignment="Center"
+                            ItemsSource="{Binding Priorities}"
+                            SelectedItem="{Binding Priority, Mode=TwoWay}" />
+                      </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                  </DataGridTemplateColumn>
+                </DataGrid.Columns>
+              </DataGrid>
+            </Grid>
+          </Grid>
+        </Grid>
+      </Grid>
+
+      <Border Grid.Row="2" Background="{DynamicResource CanXPanelBrush}" BorderBrush="{DynamicResource CanXBorderBrush}" BorderThickness="0,1,0,0" Padding="12">
+        <Grid ColumnDefinitions="*,Auto">
+          <Button
+              MinWidth="90"
+              HorizontalAlignment="Left"
+              IsVisible="{Binding IsDetailsStep}"
+              IsEnabled="{Binding !IsBusy}"
+              Click="OnBackClick"
+              Content="上一步" />
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+            <Button MinWidth="90" Click="OnCancelClick" Content="取消" IsCancel="True" />
+            <Button
+                MinWidth="100"
+                Classes="accent"
+                AutomationProperties.AcceleratorKey="Ctrl+Enter"
+                AutomationProperties.Name="读取下载信息"
+                Click="OnContinueClick"
+                Content="确定"
+                IsDefault="True"
+                IsEnabled="{Binding CanContinue}"
+                IsVisible="{Binding IsSourceStep}" />
+            <Button
+                MinWidth="100"
+                Classes="accent"
+                AutomationProperties.AcceleratorKey="Ctrl+Enter"
+                AutomationProperties.Name="确认添加下载任务"
+                Click="OnAddClick"
+                Content="开始下载"
+                IsDefault="True"
+                IsEnabled="{Binding CanAdd}"
+                IsVisible="{Binding IsDetailsStep}" />
+          </StackPanel>
+        </Grid>
+      </Border>
+    </Grid>
+    </Border>
+
+    <Grid x:Name="InlineErrorOverlay" Background="#80000000" IsVisible="False">
+      <Border
+          Width="420"
+          MaxWidth="420"
+          Margin="24"
+          HorizontalAlignment="Center"
+          VerticalAlignment="Center"
+          Background="{DynamicResource CanXBackgroundBrush}"
+          BorderBrush="{DynamicResource CanXBorderBrush}"
+          BorderThickness="1"
+          Padding="20">
+        <Grid RowDefinitions="Auto,12,Auto,20,Auto">
+          <TextBlock x:Name="InlineErrorTitle" HorizontalAlignment="Center" FontSize="18" FontWeight="SemiBold" />
+          <TextBlock x:Name="InlineErrorMessage" Grid.Row="2" MaxHeight="180" TextWrapping="Wrap" />
+          <StackPanel Grid.Row="4" HorizontalAlignment="Right" Orientation="Horizontal" Spacing="8">
+            <Button x:Name="InlineErrorCloseButton" MinWidth="90" Click="OnCloseErrorClick" Content="确定" IsDefault="True" />
+            <Button x:Name="DuplicateConfirmButton" MinWidth="100" Classes="accent" Click="OnConfirmDuplicateClick" Content="仍然添加" IsVisible="False" />
+          </StackPanel>
+        </Grid>
+      </Border>
+    </Grid>
+  </Grid>
+</UserControl>

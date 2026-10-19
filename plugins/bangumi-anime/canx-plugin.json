@@ -1,0 +1,21 @@
+{
+  "manifestVersion": 1,
+  "id": "org.canx.bangumi-anime",
+  "name": "Bangumi Anime",
+  "description": "Shows the Bangumi anime calendar, local favorites, search results, and subject details.",
+  "version": "1.6.0",
+  "apiVersion": "2.0",
+  "entry": "dist/main.js",
+  "ui": {
+    "title": "Bangumi 番剧",
+    "icon": { "builtin": "grid" }
+  },
+  "permissions": [
+    { "capability": "ui.page" },
+    { "capability": "ui.remoteImages", "scopes": ["*"] },
+    { "capability": "http", "scopes": ["*"] },
+    { "capability": "storage" },
+    { "capability": "services.invoke", "scopes": ["org.canx.bittorrent.search"] },
+    { "capability": "downloads.prompt" }
+  ]
+}

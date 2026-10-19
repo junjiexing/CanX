@@ -1,0 +1,3 @@
+# Test-server dependencies only; never shipped with CanX.
+paramiko==4.0.0
+pyftpdlib==2.1.0

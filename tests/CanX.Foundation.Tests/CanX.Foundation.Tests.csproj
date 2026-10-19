@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Headless" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/CanX.App/CanX.App.csproj" />
+    <ProjectReference Include="../../src/CanX.Core/CanX.Core.csproj" />
+    <ProjectReference Include="../../src/CanX.Application/CanX.Application.csproj" />
+    <ProjectReference Include="../../src/CanX.Downloads/CanX.Downloads.csproj" />
+    <ProjectReference Include="../../src/CanX.Infrastructure/CanX.Infrastructure.csproj" />
+    <ProjectReference Include="../../src/CanX.MediaAccess/CanX.MediaAccess.csproj" />
+    <ProjectReference Include="../../src/CanX.Playback/CanX.Playback.csproj" />
+    <ProjectReference Include="../../src/CanX.Plugins/CanX.Plugins.csproj" />
+    <ProjectReference Include="../../src/CanX.Streaming/CanX.Streaming.csproj" />
+    <ProjectReference Include="../../src/CanX.Tooling/CanX.Tooling.csproj" />
+  </ItemGroup>
+</Project>

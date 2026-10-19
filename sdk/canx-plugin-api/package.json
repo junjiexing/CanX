@@ -1,0 +1,44 @@
+{
+  "name": "@canx/plugin-api",
+  "version": "2.0.0",
+  "description": "Types, mock host and deterministic packaging tools for CanX plugins",
+  "type": "module",
+  "license": "GPL-3.0-or-later",
+  "engines": {
+    "node": ">=20"
+  },
+  "exports": {
+    ".": {
+      "types": "./index.d.ts"
+    },
+    "./mock-host": {
+      "types": "./mock-host.d.ts",
+      "import": "./mock-host.mjs"
+    },
+    "./contract.json": "./contract.json",
+    "./manifest.schema.json": "./manifest.schema.json"
+  },
+  "types": "./index.d.ts",
+  "bin": {
+    "canx-plugin": "./bin/canx-plugin.mjs"
+  },
+  "files": [
+    "bin",
+    "lib",
+    "templates",
+    "index.d.ts",
+    "mock-host.d.ts",
+    "mock-host.mjs",
+    "contract.json",
+    "manifest.schema.json",
+    "README.md"
+  ],
+  "scripts": {
+    "lint": "node ./bin/canx-plugin.mjs lint ./test/fixtures/valid",
+    "test": "node --test ./test/*.test.mjs",
+    "typecheck": "tsc --noEmit --strict --skipLibCheck --target ES2022 --module NodeNext --moduleResolution NodeNext index.d.ts mock-host.d.ts test/contract.type-test.ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2"
+  }
+}

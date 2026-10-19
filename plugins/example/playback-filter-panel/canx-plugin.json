@@ -1,0 +1,14 @@
+{
+  "manifestVersion": 1,
+  "id": "org.canx.examples.playback-filter-panel",
+  "name": "Playback Filter Panel",
+  "description": "Adds declarative playback filter controls and stores the selected preset.",
+  "version": "1.2.0",
+  "apiVersion": "2.0",
+  "entry": "dist/main.js",
+  "permissions": [
+    { "capability": "ui.contribute" },
+    { "capability": "playback.control" },
+    { "capability": "storage" }
+  ]
+}

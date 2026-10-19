@@ -1,0 +1,426 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<Styles
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <FluentTheme DensityStyle="Compact">
+    <FluentTheme.Palettes>
+      <ColorPaletteResources x:Key="Light" Accent="#0067C0" />
+      <ColorPaletteResources x:Key="Dark" Accent="#60AFFF" />
+    </FluentTheme.Palettes>
+  </FluentTheme>
+
+  <Styles.Resources>
+    <ResourceDictionary>
+      <!-- Cross-platform filled vector glyphs. Do not replace these with a
+           platform icon font: Android/Linux must render the same symbols. -->
+      <StreamGeometry x:Key="CanXIconDownload">M9,3H15V10H19L12,17L5,10H9V3ZM5,19H19V21H5V19Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconPlay">M8,5V19L19,12L8,5Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconHistory">M12,3A9,9 0 1 1 3.5,15H5.6A7,7 0 1 0 5,12H8L4,16L0,12H3A9,9 0 0 1 12,3ZM11,7H13V12L16.5,14.1L15.5,15.8L11,13V7Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconPlugin">M13,3V7H11V3H7V7H3V11H7V13H3V17H7V21H11V17H13V21H17V17H21V13H17V11H21V7H17V3H13ZM9,9H15V15H9V9Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconAgent">M12,2L14.4,8.6L21,11L14.4,13.4L12,20L9.6,13.4L3,11L9.6,8.6L12,2ZM19,17L20.1,19.9L23,21L20.1,22.1L19,25L17.9,22.1L15,21L17.9,19.9L19,17Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconSettings">M12,8A4,4 0 1 0 12,16A4,4 0 0 0 12,8ZM4.9,4.9L7.1,5.6L8.3,4.9L8.8,2.7H15.2L15.7,4.9L16.9,5.6L19.1,4.9L22.3,10.4L20.6,11.9V13.3L22.3,14.8L19.1,20.3L16.9,19.6L15.7,20.3L15.2,22.5H8.8L8.3,20.3L7.1,19.6L4.9,20.3L1.7,14.8L3.4,13.3V11.9L1.7,10.4L4.9,4.9Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconAdd">M11,4H13V11H20V13H13V20H11V13H4V11H11V4Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconFolder">M3,5H10L12,7H21V19H3V5ZM5,9V17H19V9H5Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconSearch">M10,3A7,7 0 1 0 10,17A7,7 0 0 0 10,3ZM10,5A5,5 0 1 1 10,15A5,5 0 0 1 10,5ZM15.3,14L21,19.7L19.7,21L14,15.3Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconBack">M20,11V13H8L13.5,18.5L12.1,19.9L4.2,12L12.1,4.1L13.5,5.5L8,11H20Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconRefresh">M17.7,6.3A8,8 0 1 0 19.7,14H17.6A6,6 0 1 1 16.3,7.7L13,11H21V3L17.7,6.3Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconSend">M3,3L22,12L3,21L5,13L14,12L5,11L3,3Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconPause">M7,5H11V19H7V5ZM13,5H17V19H13V5Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconStop">M6,6H18V18H6V6Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconPrevious">M6,5H8V19H6V5ZM18,5V19L9,12L18,5Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconNext">M16,5H18V19H16V5ZM6,5L15,12L6,19V5Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconNextChapter">M3,4H5V20H3V4ZM7,5L17,12L7,19V5ZM19,4H21V20H19V4Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconPreviousChapter">M3,4H5V20H3V4ZM17,5L7,12L17,19V5ZM19,4H21V20H19V4Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconRewind">M11,6V18L2.5,12L11,6ZM21,6V18L12.5,12L21,6Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconForward">M3,6L11.5,12L3,18V6ZM13,6L21.5,12L13,18V6Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconRotate">M7.1,6.1A8,8 0 0 1 20,12H17L21,16L25,12H22A10,10 0 0 0 5.7,4.7L3,2V9H10L7.1,6.1ZM3,12H6L2,8L-2,12H1A10,10 0 0 0 17.3,19.3L20,22V15H13L15.9,17.9A8,8 0 0 1 3,12Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconRotateRight">M12,1L16.5,5.5L12,10V6A6,6 0 1 0 18,12H20A8,8 0 1 1 12,4V1Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconZoomOut">M9.5,3A6.5,6.5 0 1 0 9.5,16A6.5,6.5 0 0 0 9.5,3ZM9.5,5A4.5,4.5 0 1 1 9.5,14A4.5,4.5 0 0 1 9.5,5ZM7,8.5H12V10.5H7V8.5ZM14.1,13L20.5,19.4L19.1,20.8L12.7,14.4Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconZoomIn">M9.5,3A6.5,6.5 0 1 0 9.5,16A6.5,6.5 0 0 0 9.5,3ZM9.5,5A4.5,4.5 0 1 1 9.5,14A4.5,4.5 0 0 1 9.5,5ZM8.5,7H10.5V8.5H12V10.5H10.5V12H8.5V10.5H7V8.5H8.5V7ZM14.1,13L20.5,19.4L19.1,20.8L12.7,14.4Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconFullscreen">M4,4H10V6H6V10H4V4ZM14,4H20V10H18V6H14V4ZM4,14H6V18H10V20H4V14ZM18,14H20V20H14V18H18V14Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconVolume">M4,9H8L13,5V19L8,15H4V9ZM16,8A5,5 0 0 1 16,16V14A3,3 0 0 0 16,10V8ZM18,5A9,9 0 0 1 18,19V17A7,7 0 0 0 18,7V5Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconMore">M5,10A2,2 0 1 0 5,14A2,2 0 0 0 5,10ZM12,10A2,2 0 1 0 12,14A2,2 0 0 0 12,10ZM19,10A2,2 0 1 0 19,14A2,2 0 0 0 19,10Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconDelete">M7,6V4H17V6H21V8H19V21H5V8H3V6H7ZM7,8V19H17V8H7ZM9,10H11V17H9V10ZM13,10H15V17H13V10Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconMinus">M4,11H20V13H4V11Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconClose">M5.4,4L12,10.6L18.6,4L20,5.4L13.4,12L20,18.6L18.6,20L12,13.4L5.4,20L4,18.6L10.6,12L4,5.4Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconPlaylist">M3,5H6V7H3V5ZM8,5H21V7H8V5ZM3,11H6V13H3V11ZM8,11H21V13H8V11ZM3,17L3,22L8,19.5L3,17ZM10,18H21V20H10V18Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconTracks">M3,5H15V7H3V5ZM17,3H19V9H17V3ZM19,5H21V7H19V5ZM3,11H6V13H3V11ZM6,9H8V15H6V9ZM8,11H21V13H8V11ZM3,17H15V19H3V17ZM15,15H17V21H15V15ZM17,17H21V19H17V17Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconBookmark">M6,3H18V21L12,17L6,21V3Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconDiagnostics">M3,19H6V13H3V19ZM8,19H11V8H8V19ZM13,19H16V11H13V19ZM18,19H21V5H18V19Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconGoTo">M3,11H14L10,7L11.4,5.6L18,12L11.4,18.4L10,17L14,13H3V11ZM20,5H22V19H20V5Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconRename">M3,17L15.6,4.4L19.6,8.4L7,21H3V17ZM17,3L19,1L23,5L21,7Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconClearAll">M3,5H15V7H3V5ZM3,10H13V12H3V10ZM3,15H12V17H3V15ZM15,13L17,15L19,13L20.4,14.4L18.4,16.4L20.4,18.4L19,19.8L17,17.8L15,19.8L13.6,18.4L15.6,16.4L13.6,14.4Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconLoopStart">M4,4H6V20H4V4ZM9,7L19,12L9,17V7Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconLoopEnd">M18,4H20V20H18V4ZM5,7L15,12L5,17V7Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconScreenshotSubtitles">M4,7H8L10,5H15L17,7H20V9H4V7ZM4,9H6V19H4V9ZM18,9H20V19H18V9ZM4,17H20V19H4V17ZM8,11H16V13H8V11ZM8,14H14V16H8V14Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconScreenshotVideo">M4,7H8L10,5H15L17,7H20V9H4V7ZM4,9H6V19H4V9ZM18,9H20V19H18V9ZM4,17H20V19H4V17ZM10,10L16,13L10,16V10Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconScreenshotWindow">M2,3H8V5H4V9H2V3ZM16,3H22V9H20V5H16V3ZM2,15H4V19H8V21H2V15ZM20,15H22V21H16V19H20V15ZM7,8H17V10H7V8ZM7,10H9V17H7V10ZM15,10H17V17H15V10ZM7,15H17V17H7V15Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconApply">M3,12L4.5,10.5L9,15L19.5,4.5L21,6L9,18L3,12Z</StreamGeometry>
+      <StreamGeometry x:Key="CanXIconUpload">M12,3L19,10H15V16H9V10H5L12,3ZM4,18H20V21H4V18Z</StreamGeometry>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="CanXBackgroundBrush" Color="#FFF4F7FB" />
+          <SolidColorBrush x:Key="CanXPanelBrush" Color="#FFFFFFFF" />
+          <SolidColorBrush x:Key="CanXSubtleBrush" Color="#FFE5EEF7" />
+          <SolidColorBrush x:Key="CanXBorderBrush" Color="#FFC7D5E3" />
+          <SolidColorBrush x:Key="CanXTextBrush" Color="#FF10243E" />
+          <SolidColorBrush x:Key="CanXMutedTextBrush" Color="#FF5A6B80" />
+          <SolidColorBrush x:Key="CanXAccentBrush" Color="#FF0078D4" />
+          <SolidColorBrush x:Key="CanXAccentHoverBrush" Color="#FF1689DB" />
+          <SolidColorBrush x:Key="CanXAccentPressedBrush" Color="#FF005A9E" />
+          <SolidColorBrush x:Key="CanXAccentSoftBrush" Color="#FFDCEEFF" />
+          <SolidColorBrush x:Key="CanXSecondaryBrush" Color="#FF00A4EF" />
+          <SolidColorBrush x:Key="CanXSuccessBrush" Color="#FF00A36C" />
+          <SolidColorBrush x:Key="CanXWarningBrush" Color="#FFFFB900" />
+          <SolidColorBrush x:Key="CanXDangerBrush" Color="#FFE81123" />
+          <SolidColorBrush x:Key="CanXTitleBarBrush" Color="#FFEAF1F8" />
+          <!-- Keep ContextMenu, nested MenuItem popups, and built-in
+               MenuFlyout controls on the same Metro palette as the app. -->
+          <SolidColorBrush x:Key="MenuFlyoutPresenterBackground" Color="#FFFFFFFF" />
+          <SolidColorBrush x:Key="MenuFlyoutPresenterBorderBrush" Color="#FFC7D5E3" />
+          <SolidColorBrush x:Key="MenuFlyoutItemBackground" Color="Transparent" />
+          <SolidColorBrush x:Key="MenuFlyoutItemBackgroundPointerOver" Color="#FFDCEEFF" />
+          <SolidColorBrush x:Key="MenuFlyoutItemBackgroundPressed" Color="#FF0078D4" />
+          <SolidColorBrush x:Key="MenuFlyoutItemBackgroundDisabled" Color="Transparent" />
+          <SolidColorBrush x:Key="MenuFlyoutItemForeground" Color="#FF10243E" />
+          <SolidColorBrush x:Key="MenuFlyoutItemForegroundPointerOver" Color="#FF10243E" />
+          <SolidColorBrush x:Key="MenuFlyoutItemForegroundPressed" Color="#FFFFFFFF" />
+          <SolidColorBrush x:Key="MenuFlyoutItemForegroundDisabled" Color="#805A6B80" />
+          <SolidColorBrush x:Key="MenuFlyoutSubItemChevron" Color="#FF5A6B80" />
+          <SolidColorBrush x:Key="MenuFlyoutSubItemChevronPointerOver" Color="#FF10243E" />
+          <SolidColorBrush x:Key="MenuFlyoutSubItemChevronPressed" Color="#FFFFFFFF" />
+          <SolidColorBrush x:Key="MenuFlyoutSubItemChevronSubMenuOpened" Color="#FF10243E" />
+          <SolidColorBrush x:Key="MenuFlyoutSubItemChevronDisabled" Color="#805A6B80" />
+          <SolidColorBrush x:Key="MenuFlyoutItemKeyboardAcceleratorTextForeground" Color="#FF5A6B80" />
+          <SolidColorBrush x:Key="MenuFlyoutItemKeyboardAcceleratorTextForegroundPointerOver" Color="#FF5A6B80" />
+          <SolidColorBrush x:Key="MenuFlyoutItemKeyboardAcceleratorTextForegroundPressed" Color="#FFFFFFFF" />
+          <SolidColorBrush x:Key="MenuFlyoutItemKeyboardAcceleratorTextForegroundDisabled" Color="#805A6B80" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="CanXBackgroundBrush" Color="#FF101820" />
+          <SolidColorBrush x:Key="CanXPanelBrush" Color="#FF182634" />
+          <SolidColorBrush x:Key="CanXSubtleBrush" Color="#FF22384A" />
+          <SolidColorBrush x:Key="CanXBorderBrush" Color="#FF38536A" />
+          <SolidColorBrush x:Key="CanXTextBrush" Color="#FFF4F8FC" />
+          <SolidColorBrush x:Key="CanXMutedTextBrush" Color="#FFAFBDD0" />
+          <SolidColorBrush x:Key="CanXAccentBrush" Color="#FF20A4F3" />
+          <SolidColorBrush x:Key="CanXAccentHoverBrush" Color="#FF3CB5FF" />
+          <SolidColorBrush x:Key="CanXAccentPressedBrush" Color="#FF0078D4" />
+          <SolidColorBrush x:Key="CanXAccentSoftBrush" Color="#FF173C57" />
+          <SolidColorBrush x:Key="CanXSecondaryBrush" Color="#FF00D2D3" />
+          <SolidColorBrush x:Key="CanXSuccessBrush" Color="#FF35D49A" />
+          <SolidColorBrush x:Key="CanXWarningBrush" Color="#FFFFC83D" />
+          <SolidColorBrush x:Key="CanXDangerBrush" Color="#FFFF5A67" />
+          <SolidColorBrush x:Key="CanXTitleBarBrush" Color="#FF132230" />
+          <SolidColorBrush x:Key="MenuFlyoutPresenterBackground" Color="#FF182634" />
+          <SolidColorBrush x:Key="MenuFlyoutPresenterBorderBrush" Color="#FF38536A" />
+          <SolidColorBrush x:Key="MenuFlyoutItemBackground" Color="Transparent" />
+          <SolidColorBrush x:Key="MenuFlyoutItemBackgroundPointerOver" Color="#FF173C57" />
+          <SolidColorBrush x:Key="MenuFlyoutItemBackgroundPressed" Color="#FF0078D4" />
+          <SolidColorBrush x:Key="MenuFlyoutItemBackgroundDisabled" Color="Transparent" />
+          <SolidColorBrush x:Key="MenuFlyoutItemForeground" Color="#FFF4F8FC" />
+          <SolidColorBrush x:Key="MenuFlyoutItemForegroundPointerOver" Color="#FFF4F8FC" />
+          <SolidColorBrush x:Key="MenuFlyoutItemForegroundPressed" Color="#FFFFFFFF" />
+          <SolidColorBrush x:Key="MenuFlyoutItemForegroundDisabled" Color="#80AFBDD0" />
+          <SolidColorBrush x:Key="MenuFlyoutSubItemChevron" Color="#FFAFBDD0" />
+          <SolidColorBrush x:Key="MenuFlyoutSubItemChevronPointerOver" Color="#FFF4F8FC" />
+          <SolidColorBrush x:Key="MenuFlyoutSubItemChevronPressed" Color="#FFFFFFFF" />
+          <SolidColorBrush x:Key="MenuFlyoutSubItemChevronSubMenuOpened" Color="#FFF4F8FC" />
+          <SolidColorBrush x:Key="MenuFlyoutSubItemChevronDisabled" Color="#80AFBDD0" />
+          <SolidColorBrush x:Key="MenuFlyoutItemKeyboardAcceleratorTextForeground" Color="#FFAFBDD0" />
+          <SolidColorBrush x:Key="MenuFlyoutItemKeyboardAcceleratorTextForegroundPointerOver" Color="#FFAFBDD0" />
+          <SolidColorBrush x:Key="MenuFlyoutItemKeyboardAcceleratorTextForegroundPressed" Color="#FFFFFFFF" />
+          <SolidColorBrush x:Key="MenuFlyoutItemKeyboardAcceleratorTextForegroundDisabled" Color="#80AFBDD0" />
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+
+      <!-- Keep Fluent control, popup, and slider geometry square on every platform. -->
+      <CornerRadius x:Key="ControlCornerRadius">0</CornerRadius>
+      <CornerRadius x:Key="OverlayCornerRadius">0</CornerRadius>
+      <CornerRadius x:Key="SliderThumbCornerRadius">0</CornerRadius>
+      <Thickness x:Key="MenuFlyoutItemThemePaddingNarrow">12,6</Thickness>
+      <Thickness x:Key="MenuFlyoutPresenterThemePadding">0</Thickness>
+      <Thickness x:Key="MenuFlyoutSeparatorThemePadding">8,3</Thickness>
+    </ResourceDictionary>
+  </Styles.Resources>
+
+  <Style Selector="Window">
+    <Setter Property="Background" Value="{DynamicResource CanXBackgroundBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource CanXTextBrush}" />
+  </Style>
+  <Style Selector="TemplatedControl">
+    <Setter Property="CornerRadius" Value="0" />
+  </Style>
+  <Style Selector="TextBlock">
+    <Setter Property="FontSize" Value="14" />
+  </Style>
+  <Style Selector="Button">
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="MinHeight" Value="32" />
+    <Setter Property="Padding" Value="12,5" />
+    <Setter Property="FontSize" Value="14" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Background" Value="{DynamicResource CanXSubtleBrush}" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource CanXTextBrush}" />
+  </Style>
+  <Style Selector="Button:pointerover">
+    <Setter Property="Background" Value="{DynamicResource CanXAccentSoftBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource CanXAccentBrush}" />
+  </Style>
+  <Style Selector="Button:pressed">
+    <Setter Property="Background" Value="{DynamicResource CanXAccentPressedBrush}" />
+    <Setter Property="Foreground" Value="White" />
+  </Style>
+  <Style Selector="Button.accent">
+    <Setter Property="Background" Value="{DynamicResource CanXAccentBrush}" />
+    <Setter Property="Foreground" Value="White" />
+  </Style>
+  <Style Selector="Button.accent:pointerover">
+    <Setter Property="Background" Value="{DynamicResource CanXAccentHoverBrush}" />
+  </Style>
+  <Style Selector="Button.accent:pressed">
+    <Setter Property="Background" Value="{DynamicResource CanXAccentPressedBrush}" />
+  </Style>
+  <Style Selector="Button.danger">
+    <Setter Property="Foreground" Value="{DynamicResource CanXDangerBrush}" />
+  </Style>
+  <Style Selector="Button.nav">
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="14,9" />
+  </Style>
+  <Style Selector="Button.nav.selected">
+    <Setter Property="Background" Value="{DynamicResource CanXAccentBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource CanXAccentBrush}" />
+    <Setter Property="BorderThickness" Value="3,0,0,0" />
+    <Setter Property="Padding" Value="11,9,14,9" />
+    <Setter Property="Foreground" Value="White" />
+  </Style>
+  <Style Selector="Button.nav:disabled">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Opacity" Value="0.48" />
+  </Style>
+  <Style Selector="Button.titlebar">
+    <Setter Property="Width" Value="46" />
+    <Setter Property="Height" Value="30" />
+    <Setter Property="MinWidth" Value="46" />
+    <Setter Property="MinHeight" Value="30" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Margin" Value="0" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}">
+          <ContentPresenter
+              Content="{TemplateBinding Content}"
+              ContentTemplate="{TemplateBinding ContentTemplate}"
+              HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+              VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+  <Style Selector="Button.titlebar:pointerover">
+    <Setter Property="Background" Value="{DynamicResource CanXSubtleBrush}" />
+  </Style>
+  <Style Selector="Button.titlebar:pressed">
+    <Setter Property="Background" Value="{DynamicResource CanXAccentBrush}" />
+  </Style>
+  <Style Selector="Button.icon">
+    <Setter Property="Width" Value="36" />
+    <Setter Property="Height" Value="36" />
+    <Setter Property="MinWidth" Value="36" />
+    <Setter Property="MinHeight" Value="36" />
+    <Setter Property="Padding" Value="8" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+  <Style Selector="Button.mobile-nav">
+    <Setter Property="MinHeight" Value="62" />
+    <Setter Property="Padding" Value="6,5" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0,3,0,0" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+  </Style>
+  <Style Selector="Button.mobile-nav.selected">
+    <Setter Property="Background" Value="{DynamicResource CanXAccentSoftBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource CanXAccentBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource CanXAccentBrush}" />
+  </Style>
+  <Style Selector="Button.player-control">
+    <Setter Property="Height" Value="36" />
+    <Setter Property="MinHeight" Value="36" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Foreground" Value="White" />
+    <Setter Property="Background" Value="#A6202020" />
+    <Setter Property="BorderBrush" Value="#90FFFFFF" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+  <Style Selector="Button.player-control:pointerover">
+    <Setter Property="Background" Value="{DynamicResource CanXAccentBrush}" />
+    <Setter Property="BorderBrush" Value="White" />
+  </Style>
+  <Style Selector="Button.player-control.primary">
+    <Setter Property="Background" Value="{DynamicResource CanXAccentBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource CanXAccentBrush}" />
+  </Style>
+  <Style Selector="Button.titlebar.minimize">
+    <Setter Property="Content">
+      <Template>
+        <Canvas Width="10" Height="10">
+          <Path Data="M 1,5 L 9,5" Stroke="{DynamicResource CanXTextBrush}" StrokeThickness="1" UseLayoutRounding="True" />
+        </Canvas>
+      </Template>
+    </Setter>
+  </Style>
+  <Style Selector="Button.titlebar.maximize">
+    <Setter Property="Content">
+      <Template>
+        <Canvas Width="10" Height="10">
+          <Path Data="M 0.5,0.5 L 9.5,0.5 L 9.5,9.5 L 0.5,9.5 Z" Stroke="{DynamicResource CanXTextBrush}" StrokeThickness="1" UseLayoutRounding="True" />
+        </Canvas>
+      </Template>
+    </Setter>
+  </Style>
+  <Style Selector="Button.titlebar.maximize.restore">
+    <Setter Property="Content">
+      <Template>
+        <Canvas Width="10" Height="10">
+          <Path Data="M 2.5,2.5 L 2.5,0.5 L 9.5,0.5 L 9.5,7.5 L 7.5,7.5 M 7.5,2.5 L 0.5,2.5 L 0.5,9.5 L 7.5,9.5 Z" Stroke="{DynamicResource CanXTextBrush}" StrokeThickness="1" UseLayoutRounding="True" />
+        </Canvas>
+      </Template>
+    </Setter>
+  </Style>
+  <Style Selector="Button.titlebar.close">
+    <Setter Property="Content">
+      <Template>
+        <Canvas Width="10" Height="10">
+          <Path Data="M 1,1 L 9,9 M 9,1 L 1,9" Stroke="{DynamicResource CanXTextBrush}" StrokeThickness="1" UseLayoutRounding="True" />
+        </Canvas>
+      </Template>
+    </Setter>
+  </Style>
+  <Style Selector="TextBox">
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="MinHeight" Value="32" />
+    <Setter Property="FontSize" Value="14" />
+  </Style>
+  <Style Selector="ComboBox">
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="MinHeight" Value="32" />
+    <Setter Property="FontSize" Value="14" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector="CheckBox">
+    <Setter Property="MinHeight" Value="32" />
+    <Setter Property="FontSize" Value="14" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector="RadioButton">
+    <Setter Property="MinHeight" Value="32" />
+    <Setter Property="FontSize" Value="14" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector="ContextMenu">
+    <Setter Property="Background" Value="{DynamicResource CanXPanelBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource CanXBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="Padding" Value="0" />
+  </Style>
+  <Style Selector="MenuFlyoutPresenter">
+    <Setter Property="Background" Value="{DynamicResource CanXPanelBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource CanXBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="Padding" Value="0" />
+  </Style>
+  <Style Selector="MenuItem">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="Foreground" Value="{DynamicResource CanXTextBrush}" />
+    <Setter Property="MinHeight" Value="32" />
+    <Setter Property="Padding" Value="12,6" />
+  </Style>
+  <Style Selector="MenuItem:selected /template/ Border#PART_LayoutRoot">
+    <Setter Property="Background" Value="{DynamicResource CanXAccentSoftBrush}" />
+  </Style>
+  <Style Selector="MenuItem:selected /template/ ContentPresenter#PART_HeaderPresenter">
+    <Setter Property="Foreground" Value="{DynamicResource CanXTextBrush}" />
+  </Style>
+  <Style Selector="MenuItem:pressed /template/ Border#PART_LayoutRoot">
+    <Setter Property="Background" Value="{DynamicResource CanXAccentBrush}" />
+  </Style>
+  <Style Selector="MenuItem:pressed /template/ ContentPresenter#PART_HeaderPresenter">
+    <Setter Property="Foreground" Value="White" />
+  </Style>
+  <Style Selector="MenuItem:disabled /template/ ContentPresenter#PART_HeaderPresenter">
+    <Setter Property="Foreground" Value="{DynamicResource CanXMutedTextBrush}" />
+    <Setter Property="Opacity" Value="0.48" />
+  </Style>
+  <Style Selector="DataGrid">
+    <Setter Property="BorderBrush" Value="{DynamicResource CanXBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="GridLinesVisibility" Value="Horizontal" />
+    <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource CanXBorderBrush}" />
+    <Setter Property="RowBackground" Value="{DynamicResource CanXPanelBrush}" />
+  </Style>
+  <Style Selector="ProgressBar">
+    <Setter Property="CornerRadius" Value="0" />
+  </Style>
+  <Style Selector="Border.panel">
+    <Setter Property="Background" Value="{DynamicResource CanXPanelBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource CanXBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="0" />
+  </Style>
+  <Style Selector="Border.card">
+    <Setter Property="Background" Value="{DynamicResource CanXPanelBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource CanXBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="Padding" Value="14" />
+  </Style>
+  <Style Selector="TextBlock.page-title">
+    <Setter Property="FontSize" Value="28" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource CanXTextBrush}" />
+  </Style>
+  <Style Selector="TextBlock.page-subtitle">
+    <Setter Property="Foreground" Value="{DynamicResource CanXMutedTextBrush}" />
+  </Style>
+  <Style Selector="Separator">
+    <Setter Property="Background" Value="{DynamicResource CanXBorderBrush}" />
+  </Style>
+  <Style Selector="Button:focus-visible">
+    <Setter Property="BorderBrush" Value="{DynamicResource CanXAccentBrush}" />
+    <Setter Property="BorderThickness" Value="2" />
+  </Style>
+  <Style Selector="TextBox:focus-visible">
+    <Setter Property="BorderBrush" Value="{DynamicResource CanXAccentBrush}" />
+    <Setter Property="BorderThickness" Value="2" />
+  </Style>
+  <Style Selector="ComboBox:focus-visible">
+    <Setter Property="BorderBrush" Value="{DynamicResource CanXAccentBrush}" />
+    <Setter Property="BorderThickness" Value="2" />
+  </Style>
+  <Style Selector="DataGrid:focus-visible">
+    <Setter Property="BorderBrush" Value="{DynamicResource CanXAccentBrush}" />
+    <Setter Property="BorderThickness" Value="2" />
+  </Style>
+  <Style Selector="TabItem:focus-visible">
+    <Setter Property="BorderBrush" Value="{DynamicResource CanXAccentBrush}" />
+    <Setter Property="BorderThickness" Value="2" />
+  </Style>
+</Styles>

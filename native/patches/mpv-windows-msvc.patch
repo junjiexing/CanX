@@ -1,0 +1,16 @@
+diff --git a/meson.build b/meson.build
+index 8fed718d1..e0293d487 100644
+--- a/meson.build
++++ b/meson.build
+@@ -1059 +1059,3 @@ endif
+-spirv_cross = dependency('spirv-cross-c-shared', required:
++spirv_cross = dependency(
++    host_machine.system() == 'windows' ? 'spirv-cross-c' : 'spirv-cross-c-shared',
++    static: host_machine.system() == 'windows', required:
+@@ -1816 +1818,5 @@ if win32
+-    res_flags = ['--codepage=65001']
++    if ['link', 'lld-link'].contains(cc.get_linker_id())
++        res_flags = ['/c65001']
++    else
++        res_flags = ['--codepage=65001']
++    endif

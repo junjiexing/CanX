@@ -1,0 +1,16 @@
+{
+  "manifestVersion": 1,
+  "id": "org.canx.search.nyaa",
+  "name": "Nyaa Torrent Search",
+  "description": "Headless anime BitTorrent search service backed by Nyaa RSS.",
+  "version": "1.2.0",
+  "apiVersion": "2.0",
+  "entry": "dist/main.js",
+  "configuration": { "title": "Nyaa 设置" },
+  "permissions": [
+    { "capability": "services.provide", "scopes": ["org.canx.bittorrent.search"] },
+    { "capability": "http", "scopes": ["nyaa.si", "127.0.0.1"] },
+    { "capability": "ui.configuration" },
+    { "capability": "storage" }
+  ]
+}

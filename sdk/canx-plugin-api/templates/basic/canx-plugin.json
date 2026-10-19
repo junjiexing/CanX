@@ -1,0 +1,12 @@
+{
+  "manifestVersion": 1,
+  "id": "org.example.canx-plugin",
+  "name": "CanX Plugin",
+  "description": "A CanX plugin created from the TypeScript template.",
+  "version": "1.0.0",
+  "apiVersion": "2.0",
+  "entry": "dist/main.js",
+  "permissions": [
+    { "capability": "ui.contribute" }
+  ]
+}
