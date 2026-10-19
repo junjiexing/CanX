@@ -9,7 +9,9 @@ param(
     [string] $Msys2Root,
     [string] $Proxy,
     [ValidateRange(1, 256)]
-    [int] $Jobs = [Environment]::ProcessorCount
+    [int] $Jobs = [Environment]::ProcessorCount,
+    [ValidateSet('x64', 'arm64')]
+    [string] $Architecture = 'x64'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -19,7 +21,8 @@ Set-StrictMode -Version Latest
 
 $repositoryRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 if ([string]::IsNullOrWhiteSpace($CacheRoot)) {
-    $CacheRoot = Join-Path $repositoryRoot '.cache\windows-msvc'
+    $cacheName = if ($Architecture -eq 'x64') { 'windows-msvc' } else { "windows-msvc-$Architecture" }
+    $CacheRoot = Join-Path $repositoryRoot ".cache\$cacheName"
 }
 elseif (-not [IO.Path]::IsPathRooted($CacheRoot)) {
     $CacheRoot = Join-Path $repositoryRoot $CacheRoot
@@ -29,8 +32,10 @@ $sourceRoot = Join-Path $CacheRoot 'sources'
 $buildRoot = Join-Path $CacheRoot 'build'
 $prefixRoot = Join-Path $CacheRoot 'prefix'
 $installedRoot = Join-Path $CacheRoot 'vcpkg-installed'
-$tripletRoot = Join-Path $installedRoot 'x64-windows-static'
+$tripletRoot = Join-Path $installedRoot "$Architecture-windows-static"
 $hostTripletRoot = Join-Path $installedRoot 'x64-windows'
+$cmakePlatform = if ($Architecture -eq 'arm64') { 'ARM64' } else { 'x64' }
+$manifestDirectory = Join-Path $repositoryRoot "native\windows-$Architecture"
 
 New-Item -ItemType Directory -Force -Path $CacheRoot, $sourceRoot, $buildRoot, $prefixRoot | Out-Null
 
@@ -77,17 +82,20 @@ function Import-VisualStudioEnvironment {
         throw 'Visual Studio Installer (vswhere.exe) was not found.'
     }
 
+    $requiredComponent = if ($Architecture -eq 'arm64') {
+        'Microsoft.VisualStudio.Component.VC.Tools.ARM64'
+    } else { 'Microsoft.VisualStudio.Component.VC.Tools.x86.x64' }
     $installationPath = (& $vswhere -latest -products '*' `
-        -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
+        -requires $requiredComponent `
         -property installationPath | Select-Object -First 1)
     if ([string]::IsNullOrWhiteSpace($installationPath)) {
-        throw 'Visual Studio 2022 with Desktop development with C++ is required.'
+        throw "Visual Studio with MSVC $Architecture tools is required."
     }
 
     $devShellModule = Join-Path $installationPath 'Common7\Tools\Microsoft.VisualStudio.DevShell.dll'
     Import-Module $devShellModule -ErrorAction Stop
     Enter-VsDevShell -VsInstallPath $installationPath -SkipAutomaticLocation `
-        -DevCmdArguments '-arch=x64 -host_arch=x64' | Out-Null
+        -DevCmdArguments "-arch=$Architecture -host_arch=x64" | Out-Null
     return $installationPath
 }
 
@@ -238,10 +246,10 @@ function Install-Dependencies {
     }
     Invoke-Checked $vcpkg @(
         'install',
-        '--triplet=x64-windows-static',
+        "--triplet=$Architecture-windows-static",
         '--host-triplet=x64-windows',
         "--x-install-root=$installedRoot",
-        "--x-manifest-root=$(Join-Path $repositoryRoot 'native\windows-x64')",
+        "--x-manifest-root=$manifestDirectory",
         '--disable-metrics')
 }
 
@@ -285,6 +293,27 @@ function Invoke-MesonSetup {
     )
 
     $arguments = @($meson, 'setup', $BuildDirectory, $SourceDirectory) + $Options
+    if ($Architecture -eq 'arm64') {
+        $crossFile = Join-Path $CacheRoot 'meson-arm64.ini'
+        $pkgconfPath = (Join-Path $hostTripletRoot 'tools\pkgconf\pkgconf.exe').Replace('\', '/')
+        $configuration = @"
+[binaries]
+c = ['clang', '--target=aarch64-pc-windows-msvc']
+cpp = ['clang++', '--target=aarch64-pc-windows-msvc']
+ar = 'llvm-ar'
+strip = 'llvm-strip'
+pkg-config = '$pkgconfPath'
+[host_machine]
+system = 'windows'
+cpu_family = 'aarch64'
+cpu = 'aarch64'
+endian = 'little'
+[properties]
+needs_exe_wrapper = true
+"@
+        [IO.File]::WriteAllText($crossFile, $configuration, [Text.UTF8Encoding]::new($false))
+        $arguments += @('--cross-file', $crossFile)
+    }
     if (Test-Path -LiteralPath (Join-Path $BuildDirectory 'meson-private\coredata.dat')) {
         $arguments += '--reconfigure'
     }
@@ -301,7 +330,7 @@ function Build-Zimg {
     New-Item -ItemType Directory -Force -Path $build, $lib, $include | Out-Null
     Invoke-Checked $msbuild @(
         (Join-Path $source '_msvc\zimg\zimg.vcxproj'),
-        '/m', '/t:Rebuild', '/p:Configuration=Release', '/p:Platform=x64',
+        '/m', '/t:Rebuild', '/p:Configuration=Release', "/p:Platform=$cmakePlatform",
         "/p:OutDir=$lib\", "/p:IntDir=$build\obj\")
     Copy-Item -LiteralPath (Join-Path $source 'src\zimg\api\zimg.h') -Destination $include -Force
     Copy-Item -LiteralPath (Join-Path $source 'src\zimg\api\zimg++.hpp') -Destination $include -Force
@@ -348,9 +377,23 @@ function Build-Mpv {
         (Join-Path $prefixRoot 'zimg\lib\pkgconfig'),
         (Join-Path $tripletRoot 'lib\pkgconfig'),
         (Join-Path $tripletRoot 'share\pkgconfig'))
+    if ($Architecture -eq 'arm64') {
+        $luaHeader = Get-Content -LiteralPath (Join-Path $tripletRoot 'include\lua.h') -Raw
+        $luaVersionMatch = [regex]::Match($luaHeader, '#define\s+LUA_VERSION_NUM\s+(\d+)')
+        if (-not $luaVersionMatch.Success) { throw 'Lua version was not found in lua.h.' }
+        $versionNumber = [int]$luaVersionMatch.Groups[1].Value
+        $luaVersion = '{0}.{1}' -f [Math]::Floor($versionNumber / 100), ($versionNumber % 100)
+        $luaPrefix = $tripletRoot.Replace('\', '/')
+        $luaPc = "prefix=$luaPrefix`nlibdir=`${prefix}/lib`nincludedir=`${prefix}/include`n`nName: Lua`nDescription: Lua interpreter`nVersion: $luaVersion`nLibs: -L`${libdir} -llua`nCflags: -I`${includedir}`n"
+        $luaPcDirectory = Join-Path $tripletRoot 'lib\pkgconfig'
+        New-Item -ItemType Directory -Force $luaPcDirectory | Out-Null
+        [IO.File]::WriteAllText((Join-Path $luaPcDirectory 'lua.pc'), $luaPc, [Text.UTF8Encoding]::new($false))
+    }
     $env:PKG_CONFIG_LIBDIR = $pkgRoots -join ';'
     $env:PKG_CONFIG_PATH = $env:PKG_CONFIG_LIBDIR
     $env:LIB = "$(Join-Path $prefixRoot 'libplacebo\lib');$(Join-Path $prefixRoot 'zimg\lib');$env:LIB"
+    $lua = if ($Architecture -eq 'arm64') { 'lua' } else { 'luajit' }
+    $desktopAcceleration = if ($Architecture -eq 'arm64') { 'disabled' } else { 'enabled' }
     Invoke-MesonSetup $source $build @(
         '-Db_vscrt=mt', '-Db_staticpic=true',
         "-Dc_args=-DCANX_STATIC_ANGLE=1 -I$($tripletRoot.Replace('\', '/'))/include",
@@ -359,13 +402,13 @@ function Build-Mpv {
         '-Dcplayer=false', '-Dbuild-date=false', '-Dtests=false', '-Dfuzzers=false',
         '-Dmanpage-build=disabled', '-Diconv=enabled', '-Djavascript=enabled',
         '-Djpeg=enabled', '-Dlcms2=enabled', '-Dlibarchive=enabled',
-        '-Dlibavdevice=enabled', '-Dlua=luajit', '-Duchardet=enabled',
+        '-Dlibavdevice=enabled', "-Dlua=$lua", '-Duchardet=enabled',
         '-Dvector=enabled', '-Dzimg=enabled', '-Dzlib=enabled',
         '-Dwasapi=enabled', '-Dwin32-threads=enabled', '-Dwin32-smtc=enabled',
-        '-Damf=enabled', '-Dgl=enabled', '-Dplain-gl=enabled', '-Dgl-win32=enabled',
+        "-Damf=$desktopAcceleration", '-Dgl=enabled', '-Dplain-gl=enabled', '-Dgl-win32=enabled',
         '-Degl-angle=enabled', '-Degl-angle-lib=disabled', '-Degl-angle-win32=disabled',
         '-Dshaderc=enabled', '-Dspirv-cross=enabled', '-Dd3d11=enabled',
-        '-Dvulkan=enabled', '-Dcuda-hwaccel=enabled', '-Dcuda-interop=enabled',
+        '-Dvulkan=enabled', "-Dcuda-hwaccel=$desktopAcceleration", "-Dcuda-interop=$desktopAcceleration",
         '-Dd3d-hwaccel=enabled', '-Dd3d9-hwaccel=enabled',
         "-Dprefix=$prefix", '-Dlibdir=lib', '-Dbuildtype=release',
         '-Ddefault_library=static')
@@ -397,6 +440,7 @@ function Build-Aria2 {
     $env:CANX_WINDOWS_COMPAT_INCLUDE = Join-Path $repositoryRoot 'native\windows-msvc-compat\include'
     $env:CANX_LLVM_BIN = $llvmBin
     $env:CANX_JOBS = $Jobs.ToString()
+    $env:CANX_WINDOWS_ARCHITECTURE = $Architecture
     $bash = Join-Path $msysRoot 'usr\bin\bash.exe'
     $builder = (Join-Path $repositoryRoot 'scripts\support\build-aria2-windows-msvc.sh').Replace('\', '/')
     Invoke-Checked $bash @($builder)
@@ -408,7 +452,7 @@ function Build-Shim {
     Invoke-Checked $cmake @(
         '-S', (Join-Path $repositoryRoot 'native\aria2-shim'),
         '-B', $build,
-        '-G', 'Visual Studio 17 2022', '-A', 'x64',
+        '-G', 'Visual Studio 17 2022', '-A', $cmakePlatform,
         "-DARIA2_INCLUDE_DIR=$(Join-Path $ariaPrefix 'include')",
         "-DARIA2_LIBRARY=$(Join-Path $ariaPrefix 'lib\aria2.lib')",
         '-DCANX_ARIA2_LIBRARY_TYPE=STATIC',
@@ -516,7 +560,7 @@ function Build-QuickJs {
     Invoke-Checked $cmake @(
         '-S', (Join-Path $repositoryRoot 'native\quickjs-shim'),
         '-B', $build,
-        '-G', 'Visual Studio 17 2022', '-A', 'x64', '-T', 'ClangCL',
+        '-G', 'Visual Studio 17 2022', '-A', $cmakePlatform, '-T', 'ClangCL',
         "-DQUICKJS_SOURCE_DIR=$source",
         '-DCANX_QUICKJS_LIBRARY_TYPE=STATIC',
         '-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded')

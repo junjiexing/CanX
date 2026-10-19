@@ -1,0 +1,287 @@
+name: Build and publish
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Optional existing tag to build and attach to its release
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ inputs.tag || github.event.release.tag_name || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  metadata:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.metadata.outputs.version }}
+      tag: ${{ steps.metadata.outputs.tag }}
+      commit: ${{ steps.metadata.outputs.commit }}
+    steps:
+      - name: Check out selected source
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.tag || github.event.release.tag_name || github.ref }}
+
+      - name: Resolve version and exact commit
+        id: metadata
+        env:
+          REQUESTED_TAG: ${{ inputs.tag || github.event.release.tag_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="$REQUESTED_TAG"
+          if [[ -z "$tag" && "$GITHUB_REF_TYPE" == tag ]]; then
+            tag="$GITHUB_REF_NAME"
+          fi
+          if [[ -n "$tag" ]]; then
+            [[ "$tag" =~ ^v?[0-9A-Za-z][0-9A-Za-z._+-]*$ ]]
+            [[ "$(git rev-parse "refs/tags/$tag^{commit}")" == "$(git rev-parse HEAD)" ]]
+            version="${tag#v}"
+          else
+            version="0.1.0-dev.$(git rev-parse --short=12 HEAD)"
+          fi
+          printf 'version=%s\ntag=%s\ncommit=%s\n' "$version" "$tag" "$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  tests:
+    needs: metadata
+    uses: ./.github/workflows/ci.yml
+    with:
+      commit: ${{ needs.metadata.outputs.commit }}
+
+  linux:
+    needs: [metadata, tests]
+    strategy:
+      fail-fast: false
+      matrix:
+        architecture: [x64, arm64]
+    uses: ./.github/workflows/linux-x64-release.yml
+    with:
+      version: ${{ needs.metadata.outputs.version }}
+      commit: ${{ needs.metadata.outputs.commit }}
+      architecture: ${{ matrix.architecture }}
+
+  windows:
+    needs: [metadata, tests]
+    runs-on: windows-2022
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        architecture: [x64, arm64]
+    env:
+      VERSION: ${{ needs.metadata.outputs.version }}
+      ARCHITECTURE: ${{ matrix.architecture }}
+      RID: win-${{ matrix.architecture }}
+      NATIVE_CACHE: .cache/windows-msvc-${{ matrix.architecture }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          ref: ${{ needs.metadata.outputs.commit }}
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          global-json-file: global.json
+
+      - name: Cache native dependencies and build outputs
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ${{ env.NATIVE_CACHE }}
+          key: windows-2022-${{ matrix.architecture }}-v2-${{ hashFiles('native/sources-windows-x64.lock', 'native/aria2-shim/**', 'native/quickjs-shim/**', 'native/patches/**', 'native/windows-*/**', 'spikes/CanX.Spikes.QuickJsInterop/native-source.lock', 'scripts/build-static-native-windows-x64.ps1', 'scripts/support/**') }}
+
+      - name: Install MSYS2 Autotools frontend
+        shell: pwsh
+        run: |
+          & C:/msys64/usr/bin/bash.exe -lc 'pacman -Sy --noconfirm --needed autoconf automake libtool make pkgconf diffutils patch'
+          if ($LASTEXITCODE -ne 0) { throw 'MSYS2 build tools could not be installed.' }
+
+      - name: Build and audit NativeAOT application
+        shell: pwsh
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $component = if ($env:ARCHITECTURE -eq 'arm64') { 'Microsoft.VisualStudio.Component.VC.Tools.ARM64' } else { 'Microsoft.VisualStudio.Component.VC.Tools.x86.x64' }
+          $installation = & $vswhere -latest -products '*' -requires $component -property installationPath
+          if (-not $installation) { throw "MSVC $env:ARCHITECTURE tools were not found." }
+          $target = if ($env:ARCHITECTURE -eq 'arm64') { 'arm64' } else { 'amd64' }
+          & "$installation\Common7\Tools\Launch-VsDevShell.ps1" -Arch $target -HostArch amd64 -SkipAutomaticLocation
+          $env:IlcUseEnvironmentalTools = 'true'
+          ./scripts/publish-static-app-windows-x64.ps1 -Architecture $env:ARCHITECTURE -CacheRoot $env:NATIVE_CACHE -Jobs 2
+
+      - name: Package application and symbols
+        shell: pwsh
+        run: |
+          $output = "artifacts/release/$env:RID"
+          New-Item -ItemType Directory -Force $output | Out-Null
+          Copy-Item LICENSE, README.md "artifacts/publish/$env:RID/"
+          Compress-Archive -Path "artifacts/publish/$env:RID/*" -DestinationPath "$output/CanX-$env:VERSION-$env:RID.zip"
+          Compress-Archive -Path "artifacts/symbols/$env:RID/*" -DestinationPath "$output/CanX-$env:VERSION-$env:RID-symbols.zip"
+          Get-ChildItem $output -Filter '*.zip' | Sort-Object Name | ForEach-Object {
+            '{0}  {1}' -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant(), $_.Name
+          } | Set-Content "$output/CanX-$env:VERSION-$env:RID-SHA256SUMS" -Encoding ascii
+
+      - name: Upload Windows packages
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: release-win-${{ matrix.architecture }}
+          path: artifacts/release/win-${{ matrix.architecture }}/*
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+
+  android:
+    needs: [metadata, tests]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - abi: arm64-v8a
+            rid: android-arm64
+          - abi: x86_64
+            rid: android-x64
+    env:
+      VERSION: ${{ needs.metadata.outputs.version }}
+      ABI: ${{ matrix.abi }}
+      RID: ${{ matrix.rid }}
+      CANX_BUILD_JOBS: '2'
+    steps:
+      - name: Check out source
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          ref: ${{ needs.metadata.outputs.commit }}
+
+      - name: Install build tools
+        run: |
+          sudo rm -rf /usr/local/lib/android /opt/ghc /usr/local/.ghcup
+          df -h .
+          sudo apt-get update
+          sudo apt-get install -y autoconf automake build-essential cmake gperf libtool ninja-build pkg-config python3-pip nasm unzip zip
+          python3 -m pip install --target .cache/python-tools meson==1.9.1
+
+      - name: Cache pinned sources and native outputs
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: |
+            .cache/upstream
+            .cache/native/quickjs
+            .cache/android-native/${{ matrix.abi }}
+          key: android-${{ matrix.abi }}-v1-${{ hashFiles('native/sources-linux-x64.lock', 'native/aria2-shim/**', 'native/quickjs-shim/**', 'native/patches/**', 'spikes/CanX.Spikes.QuickJsInterop/native-source.lock', 'scripts/*android*') }}
+
+      - name: Build and audit NativeAOT APK
+        run: |
+          scripts/prepare-android-sources.sh
+          scripts/publish-static-app-android.sh "$ABI"
+
+      - name: Package APK and symbols
+        run: |
+          output="artifacts/release/$RID"
+          mkdir -p "$output"
+          cp "artifacts/android/$RID-full/org.canx.app-Signed.apk" "$output/CanX-$VERSION-$RID.apk"
+          tar -czf "$output/CanX-$VERSION-$RID-symbols.tar.gz" -C artifacts/symbols "$RID-full"
+          cp LICENSE "$output/CanX-$VERSION-$RID-LICENSE.txt"
+          (cd "$output"; sha256sum ./*.apk ./*.tar.gz ./*.txt > "CanX-$VERSION-$RID-SHA256SUMS")
+
+      - name: Upload Android packages
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: release-${{ matrix.rid }}
+          path: artifacts/release/${{ matrix.rid }}/*
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+
+  macos:
+    if: vars.CANX_MACOS_CI_ENABLED == 'true'
+    needs: [metadata, tests]
+    runs-on: [self-hosted, macOS, ARM64, canx-release]
+    timeout-minutes: 180
+    env:
+      VERSION: ${{ needs.metadata.outputs.version }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          ref: ${{ needs.metadata.outputs.commit }}
+          clean: false
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          global-json-file: global.json
+
+      - name: Build and package macOS application
+        run: |
+          export CANX_DOTNET="$(command -v dotnet)"
+          scripts/package-app-macos.sh
+          output=artifacts/release/osx-arm64
+          rm -rf -- "$output"
+          mkdir -p "$output"
+          ditto -c -k --sequesterRsrc --keepParent artifacts/macos/CanX.app "$output/CanX-$VERSION-osx-arm64.zip"
+          tar -czf "$output/CanX-$VERSION-osx-arm64-symbols.tar.gz" -C artifacts/symbols osx-arm64
+          cp LICENSE "$output/CanX-$VERSION-osx-arm64-LICENSE.txt"
+          (cd "$output"; shasum -a 256 ./*.zip ./*.tar.gz ./*.txt > "CanX-$VERSION-osx-arm64-SHA256SUMS")
+
+      - name: Upload macOS packages
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: release-osx-arm64
+          path: artifacts/release/osx-arm64/*
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+
+  release:
+    name: Attach packages to existing release
+    if: >-
+      always() && !cancelled() && needs.metadata.result == 'success' &&
+      needs.tests.result == 'success' && needs.metadata.outputs.tag != ''
+    needs: [metadata, tests, linux, windows, android, macos]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Download completed platform packages
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: release-*
+          path: release-assets
+          merge-multiple: true
+
+      - name: Upload only when the matching release exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ needs.metadata.outputs.tag }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          assets=(release-assets/*)
+          if (( ${#assets[@]} == 0 )); then
+            echo 'No platform packages completed successfully.'
+            exit 0
+          fi
+          response="$(mktemp)"
+          status="$(curl --silent --show-error --output "$response" --write-out '%{http_code}' \
+            -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' \
+            "$GITHUB_API_URL/repos/$GH_REPO/releases/tags/$RELEASE_TAG")"
+          case "$status" in
+            200) gh release upload "$RELEASE_TAG" "${assets[@]}" --clobber ;;
+            404) echo "No release for $RELEASE_TAG; packages remain available as Actions artifacts." ;;
+            *) cat "$response" >&2; exit 1 ;;
+          esac

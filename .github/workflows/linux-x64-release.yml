@@ -1,44 +1,44 @@
-name: Linux x64 release candidate
+name: Linux package
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
       version:
         description: Release version without a leading v
         required: true
         type: string
-  push:
-    tags:
-      - 'v*'
+      commit:
+        description: Source commit resolved by the caller
+        required: true
+        type: string
+      architecture:
+        description: Native runner architecture (x64 or arm64)
+        required: false
+        default: x64
+        type: string
 
 permissions:
   contents: read
 
-concurrency:
-  group: linux-x64-release-${{ github.ref }}
-  cancel-in-progress: false
-
 jobs:
   release:
-    runs-on: ubuntu-24.04
+    runs-on: ${{ inputs.architecture == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     timeout-minutes: 360
+    env:
+      CANX_LINUX_ARCHITECTURE: ${{ inputs.architecture }}
+      RID: linux-${{ inputs.architecture }}
     steps:
       - name: Check out source
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
         with:
           fetch-depth: 0
+          ref: ${{ inputs.commit }}
 
-      - name: Resolve release version
-        id: version
+      - name: Free hosted runner space for native compilation
         shell: bash
         run: |
-          if [[ "${GITHUB_REF_TYPE}" == tag ]]; then
-            version="${GITHUB_REF_NAME#v}"
-          else
-            version="${{ inputs.version }}"
-          fi
-          [[ "$version" =~ ^[0-9A-Za-z][0-9A-Za-z._+-]*$ ]]
-          printf 'value=%s\n' "$version" >> "$GITHUB_OUTPUT"
+          sudo rm -rf /usr/local/lib/android /opt/ghc /usr/local/.ghcup
+          df -h .
 
       - name: Cache pinned native source and build outputs
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
@@ -47,29 +47,33 @@ jobs:
             .cache/static-native-ubuntu22.04
             .cache/native/quickjs
             .cache/nuget
-          key: linux-x64-jammy-${{ hashFiles('native/sources-linux-x64.lock', 'spikes/CanX.Spikes.QuickJsInterop/native-source.lock', 'scripts/build-static-native-linux-x64.sh', 'scripts/prepare-quickjs-spike.sh') }}
+          key: linux-${{ inputs.architecture }}-jammy-v3-${{ hashFiles('native/sources-linux-x64.lock', 'native/aria2-shim/**', 'native/quickjs-shim/**', 'native/patches/**', 'native/linux-x64-ubuntu22.04.Dockerfile', 'spikes/CanX.Spikes.QuickJsInterop/native-source.lock', 'scripts/*linux-x64.sh', 'scripts/support/linux-architecture.sh', 'scripts/prepare-quickjs-spike.sh') }}
 
-      - name: Build, test, audit and package in Ubuntu 22.04
+      - name: Build, audit and package in Ubuntu 22.04
         shell: bash
+        env:
+          CANX_CI_VERSION: ${{ inputs.version }}
         run: |
+          [[ "$CANX_CI_VERSION" =~ ^[0-9A-Za-z][0-9A-Za-z._+-]*$ ]]
           scripts/run-ubuntu-22.04-linux-x64.sh bash -lc '
             set -euo pipefail
-            dotnet test tests/CanX.Foundation.Tests/CanX.Foundation.Tests.csproj -c Release
-            dotnet test tests/CanX.Plugins.Tests/CanX.Plugins.Tests.csproj -c Release
-            dotnet test tests/CanX.Agent.Tests/CanX.Agent.Tests.csproj -c Release
             scripts/publish-static-app-linux-x64.sh
             scripts/package-release-linux-x64.sh --version "$1"
-          ' bash '${{ steps.version.outputs.value }}'
+          ' bash "$CANX_CI_VERSION"
 
       - name: Verify release contents and checksums
         shell: bash
-        run: scripts/verify-release-package-linux-x64.sh --version '${{ steps.version.outputs.value }}'
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          scripts/verify-release-package-linux-x64.sh --version "$VERSION"
+          mv "artifacts/release/$RID/SHA256SUMS" "artifacts/release/$RID/CanX-$VERSION-$RID-SHA256SUMS"
 
       - name: Upload unsigned release candidate
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: CanX-${{ steps.version.outputs.value }}-linux-x64
-          path: artifacts/release/linux-x64/*
+          name: release-linux-${{ inputs.architecture }}
+          path: artifacts/release/linux-${{ inputs.architecture }}/*
           if-no-files-found: error
           retention-days: 30
           compression-level: 0

@@ -2,17 +2,18 @@
 set -euo pipefail
 
 repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-static_root="${CANX_STATIC_ROOT:-$repository_root/.cache/static-native/linux-x64}"
+source "$repository_root/scripts/support/linux-architecture.sh"
+static_root="${CANX_STATIC_ROOT:-$repository_root/.cache/static-native/$linux_runtime}"
 prefix_root="$static_root/prefix"
 include_smoke_tests="${CANX_INCLUDE_SMOKE_TESTS:-false}"
 case "$include_smoke_tests" in
   true)
-    default_output_dir="$repository_root/artifacts/verify/linux-x64"
-    default_symbols_dir="$repository_root/artifacts/verify/linux-x64-symbols"
+    default_output_dir="$repository_root/artifacts/verify/$linux_runtime"
+    default_symbols_dir="$repository_root/artifacts/verify/$linux_runtime-symbols"
     ;;
   false)
-    default_output_dir="$repository_root/artifacts/publish/linux-x64"
-    default_symbols_dir="$repository_root/artifacts/symbols/linux-x64"
+    default_output_dir="$repository_root/artifacts/publish/$linux_runtime"
+    default_symbols_dir="$repository_root/artifacts/symbols/$linux_runtime"
     ;;
   *) echo "CANX_INCLUDE_SMOKE_TESTS must be true or false" >&2; exit 2 ;;
 esac
@@ -99,8 +100,6 @@ libraries=(
   "$avalonia_native/libjpeg.a"
   "$avalonia_native/libpng.a"
   "$avalonia_native/libwebp.a"
-  "$avalonia_native/libwebp_avx2.a"
-  "$avalonia_native/libwebp_sse41.a"
   "$avalonia_native/libwuffs.a"
   "$avalonia_native/libskcms.a"
   "$avalonia_native/libfreetype2.a"
@@ -136,7 +135,6 @@ libraries=(
   "$mpv_deps/libSPIRV-Tools-opt.a"
   "$mpv_deps/libSPIRV-Tools.a"
   "$mpv_deps/libOpenCL.a"
-  "$mpv_deps/libvpl.a"
   "$mpv_deps/libva-drm.a"
   "$mpv_deps/libva.a"
   "$mpv_deps/libdisplay-info.a"
@@ -163,13 +161,18 @@ libraries=(
   "$libatomic"
   "$libstdcpp"
   "$libgcc_eh"
-  "$link_group_end"
-  "$hide_archive_symbols"
 )
+for archive in "$avalonia_native"/libwebp_*.a; do
+  [[ ! -f "$archive" ]] || libraries+=("$archive")
+done
+if [[ "$linux_architecture" == x64 ]]; then
+  libraries+=("$mpv_deps/libvpl.a")
+fi
+libraries+=("$link_group_end" "$hide_archive_symbols")
 
 dotnet publish "$repository_root/src/CanX.App/CanX.App.csproj" \
   --configuration Release \
-  --runtime linux-x64 \
+  --runtime "$linux_runtime" \
   --self-contained \
   --output "$output_dir" \
   -p:CanXProductionPublish=true \
@@ -180,6 +183,12 @@ dotnet publish "$repository_root/src/CanX.App/CanX.App.csproj" \
   "-p:CanXStaticCxxRuntime=$libstdcpp" \
   '-p:CanXStaticNativeSidecars=libcanx_aria2.so|libmpv.so|libcanx_quickjs.so|libSkiaSharp.so|libHarfBuzzSharp.so' \
   -p:LinkStandardCPlusPlusLibrary=true
+
+machine_pattern='Advanced Micro Devices X86-64'
+[[ "$linux_architecture" != arm64 ]] || machine_pattern=AArch64
+readelf -h "$output_dir/CanX.App" | grep -q "$machine_pattern" || {
+  echo "published executable is not $linux_runtime" >&2; exit 1;
+}
 
 "$repository_root/scripts/audit-native-dependencies-linux.sh" "$output_dir/CanX.App" \
   --allow-needed libEGL.so.1 --allow-needed libvulkan.so.1
@@ -201,5 +210,5 @@ if [[ "$include_smoke_tests" == true ]]; then
 else
   rm -f "$output_dir/CanX.smoke-build"
 fi
-printf 'CANX_STATIC_APP_PUBLISH_OK platform=linux-x64 output=%s symbols=%s smoke=%s\n' \
-  "$output_dir" "$symbols_dir" "$include_smoke_tests"
+printf 'CANX_STATIC_APP_PUBLISH_OK platform=%s output=%s symbols=%s smoke=%s\n' \
+  "$linux_runtime" "$output_dir" "$symbols_dir" "$include_smoke_tests"

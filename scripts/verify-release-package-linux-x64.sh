@@ -3,7 +3,8 @@
 set -euo pipefail
 
 repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-release_root="${CANX_RELEASE_OUTPUT:-$repository_root/artifacts/release/linux-x64}"
+source "$repository_root/scripts/support/linux-architecture.sh"
+release_root="${CANX_RELEASE_OUTPUT:-$repository_root/artifacts/release/$linux_runtime}"
 version="${CANX_VERSION:-}"
 
 if [[ "${1:-}" == "--version" && $# -eq 2 ]]; then
@@ -22,7 +23,7 @@ for tool in gzip grep python3 sha256sum tar; do
   command -v "$tool" >/dev/null 2>&1 || { echo "missing release verification tool: $tool" >&2; exit 2; }
 done
 
-package_name="CanX-$version-linux-x64"
+package_name="CanX-$version-$linux_runtime"
 binary_archive="$release_root/$package_name.tar.gz"
 symbols_archive="$release_root/$package_name-symbols.tar.gz"
 source_archive="$release_root/$package_name-source.tar.gz"

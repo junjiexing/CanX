@@ -9,7 +9,9 @@ param(
     [switch] $SkipSmoke,
     [string] $Proxy,
     [ValidateRange(1, 256)]
-    [int] $Jobs = [Environment]::ProcessorCount
+    [int] $Jobs = [Environment]::ProcessorCount,
+    [ValidateSet('x64', 'arm64')]
+    [string] $Architecture = 'x64'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -18,8 +20,10 @@ Set-StrictMode -Version Latest
 & (Join-Path $PSScriptRoot 'support\initialize-windows-build-environment.ps1')
 
 $repositoryRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+$runtime = "win-$Architecture"
 if ([string]::IsNullOrWhiteSpace($CacheRoot)) {
-    $CacheRoot = Join-Path $repositoryRoot '.cache\windows-msvc'
+    $cacheName = if ($Architecture -eq 'x64') { 'windows-msvc' } else { "windows-msvc-$Architecture" }
+    $CacheRoot = Join-Path $repositoryRoot ".cache\$cacheName"
 }
 elseif (-not [IO.Path]::IsPathRooted($CacheRoot)) {
     $CacheRoot = Join-Path $repositoryRoot $CacheRoot
@@ -28,10 +32,10 @@ $CacheRoot = [IO.Path]::GetFullPath($CacheRoot)
 
 if ([string]::IsNullOrWhiteSpace($OutputDirectory)) {
     $OutputDirectory = if ($SmokeBuild) {
-        Join-Path $repositoryRoot 'artifacts\verify\win-x64'
+        Join-Path $repositoryRoot "artifacts\verify\$runtime"
     }
     else {
-        Join-Path $repositoryRoot 'artifacts\publish\win-x64'
+        Join-Path $repositoryRoot "artifacts\publish\$runtime"
     }
 }
 elseif (-not [IO.Path]::IsPathRooted($OutputDirectory)) {
@@ -39,10 +43,10 @@ elseif (-not [IO.Path]::IsPathRooted($OutputDirectory)) {
 }
 $OutputDirectory = [IO.Path]::GetFullPath($OutputDirectory)
 $symbolsDirectory = if ($SmokeBuild) {
-    Join-Path $repositoryRoot 'artifacts\verify\win-x64-symbols'
+    Join-Path $repositoryRoot "artifacts\verify\$runtime-symbols"
 }
 else {
-    Join-Path $repositoryRoot 'artifacts\symbols\win-x64'
+    Join-Path $repositoryRoot "artifacts\symbols\$runtime"
 }
 
 function Invoke-Checked {
@@ -75,6 +79,7 @@ function Resolve-Dotnet {
 
 if (-not $SkipNativeBuild) {
     $buildArguments = @{
+        Architecture = $Architecture
         Component = 'All'
         CacheRoot = $CacheRoot
         Jobs = $Jobs
@@ -88,7 +93,7 @@ if (-not $SkipNativeBuild) {
     }
 }
 
-$vcpkgLibraryRoot = Join-Path $CacheRoot 'vcpkg-installed\x64-windows-static\lib'
+$vcpkgLibraryRoot = Join-Path $CacheRoot "vcpkg-installed\$Architecture-windows-static\lib"
 $libraries = @(
     (Join-Path $CacheRoot 'build\aria2-shim\Release\canx_aria2.lib'),
     (Join-Path $CacheRoot 'build\quickjs-shim\Release\canx_quickjs.lib'),
@@ -159,6 +164,12 @@ $libraries = @(
     (Join-Path $vcpkgLibraryRoot 'libssh2.lib'),
     (Join-Path $vcpkgLibraryRoot 'cares.lib'))
 
+if ($Architecture -eq 'arm64') {
+    $libraries = @($libraries | Where-Object {
+        [IO.Path]::GetFileName($_) -notin @('lua51.lib', 'vpl.lib')
+    }) + (Join-Path $vcpkgLibraryRoot 'lua.lib')
+}
+
 $systemLibraries = @(
     'avrt.lib', 'dwmapi.lib', 'imm32.lib', 'ntdll.lib', 'pathcch.lib',
     # windowsapp.lib is an umbrella import library. When it precedes the
@@ -190,7 +201,7 @@ if (Test-Path -LiteralPath $stagingDirectory) {
 $publishArguments = @(
     'publish', (Join-Path $repositoryRoot 'src\CanX.App\CanX.App.csproj'),
     '--configuration', 'Release',
-    '--runtime', 'win-x64',
+    '--runtime', $runtime,
     '--self-contained',
     '--output', $stagingDirectory,
     '-p:PublishAot=true',
@@ -212,6 +223,7 @@ if (-not (Test-Path -LiteralPath $stagedExecutable)) {
 
 & (Join-Path $PSScriptRoot 'audit-native-dependencies-windows-x64.ps1') `
     -Binary $stagedExecutable `
+    -ExpectedArchitecture $Architecture `
     -RejectDynamicUcrt `
     -MaximumApiSetLibraries 5
 

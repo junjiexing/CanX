@@ -5,7 +5,9 @@ param(
     [Parameter(Mandatory = $true, Position = 0)]
     [string] $Binary,
     [int] $MaximumApiSetLibraries = -1,
-    [switch] $RejectDynamicUcrt
+    [switch] $RejectDynamicUcrt,
+    [ValidateSet('x64', 'arm64')]
+    [string] $ExpectedArchitecture
 )
 
 $ErrorActionPreference = 'Stop'
@@ -41,6 +43,12 @@ if ($peOffset -lt 0 -or $peOffset + 24 -gt $bytes.Length -or
 }
 
 $coffOffset = $peOffset + 4
+if ($ExpectedArchitecture) {
+    $expectedMachine = if ($ExpectedArchitecture -eq 'arm64') { 0xaa64 } else { 0x8664 }
+    if ((Read-UInt16 $coffOffset) -ne $expectedMachine) {
+        throw "PE architecture does not match $ExpectedArchitecture`: $binaryPath"
+    }
+}
 $sectionCount = [int](Read-UInt16 ($coffOffset + 2))
 $optionalSize = [int](Read-UInt16 ($coffOffset + 16))
 $optionalOffset = $coffOffset + 20

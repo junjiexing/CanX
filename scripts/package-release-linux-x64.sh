@@ -3,10 +3,11 @@
 set -euo pipefail
 
 repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-publish_directory="${CANX_APP_OUTPUT:-$repository_root/artifacts/publish/linux-x64}"
-symbols_source="${CANX_APP_SYMBOLS_OUTPUT:-$repository_root/artifacts/symbols/linux-x64}"
-release_root="${CANX_RELEASE_OUTPUT:-$repository_root/artifacts/release/linux-x64}"
-static_root="${CANX_STATIC_ROOT:-$repository_root/.cache/static-native/linux-x64}"
+source "$repository_root/scripts/support/linux-architecture.sh"
+publish_directory="${CANX_APP_OUTPUT:-$repository_root/artifacts/publish/$linux_runtime}"
+symbols_source="${CANX_APP_SYMBOLS_OUTPUT:-$repository_root/artifacts/symbols/$linux_runtime}"
+release_root="${CANX_RELEASE_OUTPUT:-$repository_root/artifacts/release/$linux_runtime}"
+static_root="${CANX_STATIC_ROOT:-$repository_root/.cache/static-native/$linux_runtime}"
 quickjs_source_root="$repository_root/.cache/native/quickjs/source"
 version="${CANX_VERSION:-}"
 include_source=true
@@ -54,7 +55,7 @@ for tool in git gzip python3 sha256sum tar; do
 done
 
 mkdir -p "$release_root"
-package_name="CanX-$version-linux-x64"
+package_name="CanX-$version-$linux_runtime"
 archive="$release_root/$package_name.tar.gz"
 symbols_archive="$release_root/$package_name-symbols.tar.gz"
 source_archive="$release_root/$package_name-source.tar.gz"
@@ -76,7 +77,7 @@ python3 "$repository_root/scripts/generate-release-metadata.py" \
   --repository-root "$repository_root" \
   --publish-directory "$publish_directory" \
   --output-directory "$package_directory" \
-  --rid linux-x64 \
+  --rid "$linux_runtime" \
   --version "$version" \
   --native-lock "$repository_root/native/sources-linux-x64.lock" \
   --static-source-root "$static_root/sources" \

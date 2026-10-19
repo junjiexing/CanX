@@ -2,8 +2,9 @@
 set -euo pipefail
 
 repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$repository_root/scripts/support/linux-architecture.sh"
 lock_file="$repository_root/native/sources-linux-x64.lock"
-static_root="${CANX_STATIC_ROOT:-$repository_root/.cache/static-native/linux-x64}"
+static_root="${CANX_STATIC_ROOT:-$repository_root/.cache/static-native/$linux_runtime}"
 source_root="$static_root/sources"
 build_root="$static_root/build"
 prefix_root="$static_root/prefix"
@@ -335,6 +336,12 @@ build_mpv() {
   local deps="$prefix_root/mpv-dependencies"
   local install="$prefix_root/mpv"
   local pkg_config_path="$deps/lib/pkgconfig"
+  local desktop_ffmpeg=(--enable-x86asm --enable-ffnvcodec --enable-nvdec --enable-cuvid --enable-nvenc --enable-amf --enable-libvpl)
+  local desktop_mpv=(-Dcuda-hwaccel=enabled -Dcuda-interop=enabled)
+  if [[ "$linux_architecture" == arm64 ]]; then
+    desktop_ffmpeg=(--disable-x86asm --disable-ffnvcodec --disable-nvdec --disable-cuvid --disable-nvenc --disable-amf --disable-libvpl --enable-v4l2-m2m)
+    desktop_mpv=(-Dcuda-hwaccel=disabled -Dcuda-interop=disabled)
+  fi
 
   for source in \
     mpv ffmpeg nv-codec-headers amf onevpl libdrm libva \
@@ -425,12 +432,14 @@ build_mpv() {
   PKG_CONFIG_PATH="$pkg_config_path" meson_build libva "$source_root/libva" "$deps" \
     -Ddisable_drm=false -Dwith_x11=no -Dwith_glx=no -Dwith_wayland=no \
     -Dwith_win32=no -Dwith_legacy=[] -Denable_docs=false \
-    -Ddriverdir=/usr/lib/x86_64-linux-gnu/dri
+    "-Ddriverdir=/usr/lib/$linux_multiarch/dri"
 
-  cmake_build onevpl "$source_root/onevpl" "$deps" \
-    -DBUILD_SHARED_LIBS=OFF -DBUILD_DISPATCHER=ON -DBUILD_DEV=ON \
-    -DBUILD_TOOLS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_TESTS=OFF \
-    -DBUILD_PREVIEW=OFF -DINSTALL_EXAMPLE_CODE=OFF
+  if [[ "$linux_architecture" == x64 ]]; then
+    cmake_build onevpl "$source_root/onevpl" "$deps" \
+      -DBUILD_SHARED_LIBS=OFF -DBUILD_DISPATCHER=ON -DBUILD_DEV=ON \
+      -DBUILD_TOOLS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_TESTS=OFF \
+      -DBUILD_PREVIEW=OFF -DINSTALL_EXAMPLE_CODE=OFF
+  fi
 
   # glslang's known_good.json pins SPIRV-Tools and SPIRV-Headers. Fetch those
   # exact revisions rather than using whatever shader compiler the host has.
@@ -670,10 +679,9 @@ build_mpv() {
       --prefix="$deps" --libdir="$deps/lib" \
       --disable-shared --enable-static --enable-pic \
       --disable-programs --disable-doc --disable-debug \
-      --disable-autodetect --enable-x86asm --enable-pthreads \
+      --disable-autodetect --enable-pthreads \
       --enable-gpl --enable-version3 \
-      --enable-ffnvcodec --enable-nvdec --enable-cuvid --enable-nvenc \
-      --enable-amf --enable-libvpl \
+      "${desktop_ffmpeg[@]}" \
       --enable-libdrm --enable-vaapi --disable-vdpau \
       --enable-vulkan --enable-opencl --enable-libglslang \
       --enable-libplacebo \
@@ -694,13 +702,15 @@ build_mpv() {
   # These are distribution capabilities, not probes of the build machine's
   # current GPU. Fail the build if an upstream/configuration change silently
   # drops any vendor-neutral Linux x64 acceleration path.
-  assert_config_enabled "$build_root/ffmpeg/config.h" \
-    CONFIG_AMF CONFIG_FFNVCODEC CONFIG_NVDEC CONFIG_CUVID CONFIG_NVENC \
-    CONFIG_LIBVPL CONFIG_QSV CONFIG_LIBDRM CONFIG_VAAPI \
+  if [[ "$linux_architecture" == x64 ]]; then
+    assert_config_enabled "$build_root/ffmpeg/config.h" \
+      CONFIG_AMF CONFIG_FFNVCODEC CONFIG_NVDEC CONFIG_CUVID CONFIG_NVENC CONFIG_LIBVPL CONFIG_QSV
+    assert_config_enabled "$build_root/ffmpeg/config_components.h" \
+      CONFIG_H264_AMF_DECODER CONFIG_HEVC_AMF_DECODER CONFIG_H264_QSV_DECODER CONFIG_HEVC_QSV_DECODER
+  fi
+  assert_config_enabled "$build_root/ffmpeg/config.h" CONFIG_LIBDRM CONFIG_VAAPI \
     CONFIG_VULKAN CONFIG_OPENCL CONFIG_LIBGLSLANG CONFIG_LIBPLACEBO
   assert_config_enabled "$build_root/ffmpeg/config_components.h" \
-    CONFIG_H264_AMF_DECODER CONFIG_HEVC_AMF_DECODER \
-    CONFIG_H264_QSV_DECODER CONFIG_HEVC_QSV_DECODER \
     CONFIG_H264_VAAPI_HWACCEL CONFIG_HEVC_VAAPI_HWACCEL \
     CONFIG_H264_VULKAN_HWACCEL CONFIG_HEVC_VULKAN_HWACCEL
 
@@ -713,7 +723,7 @@ build_mpv() {
     "$source_root/mpv/TOOLS/canx-static-libmpv" \
       --libdir=lib -Db_staticpic=true \
       -Dalsa=enabled \
-      -Dcuda-hwaccel=enabled -Dcuda-interop=enabled \
+      "${desktop_mpv[@]}" \
       -Ddrm=enabled -Degl=enabled \
       -Dvaapi=enabled -Dvaapi-drm=enabled -Dvulkan=enabled \
       -Dgbm=disabled -Dvaapi-wayland=disabled -Dvaapi-x11=disabled \
@@ -723,8 +733,11 @@ build_mpv() {
       -Dlua=lua -Doss-audio=disabled \
       -Duchardet=enabled -Dvector=enabled -Dzimg=enabled -Dzlib=enabled
 
-  assert_config_enabled "$build_root/mpv/config.h" \
-    HAVE_CUDA_HWACCEL HAVE_CUDA_INTEROP HAVE_DRM HAVE_EGL \
+  if [[ "$linux_architecture" == x64 ]]; then
+    assert_config_enabled "$build_root/mpv/config.h" HAVE_CUDA_HWACCEL HAVE_CUDA_INTEROP
+    assert_archive "$deps/lib/libvpl.a"
+  fi
+  assert_config_enabled "$build_root/mpv/config.h" HAVE_DRM HAVE_EGL \
     HAVE_VAAPI HAVE_VAAPI_DRM HAVE_DMABUF_INTEROP_GL \
     HAVE_VULKAN HAVE_LIBPLACEBO
 
@@ -748,7 +761,6 @@ build_mpv() {
     "$deps/lib/libplacebo.a" \
     "$deps/lib/libva.a" \
     "$deps/lib/libva-drm.a" \
-    "$deps/lib/libvpl.a" \
     "$deps/lib/libOpenCL.a" \
     "$deps/lib/libglslang-default-resource-limits.a" \
     "$deps/lib/libglslang.a" \
@@ -773,7 +785,11 @@ build_avalonia_native() {
   local install="$prefix_root/avalonia"
   local source_dir="$source_root/skiasharp"
   local skia_dir="$source_dir/externals/skia"
-  local skia_build="$skia_dir/out/canx/linux-x64"
+  local skia_build="$skia_dir/out/canx/$linux_runtime"
+  local skia_gn="$skia_dir/bin/gn"
+  if [[ "$linux_architecture" == arm64 ]]; then
+    skia_gn="$(command -v gn)" || { echo 'native ARM64 gn is required (install generate-ninja)' >&2; exit 2; }
+  fi
   local pkg_config_path="$mpv_deps/lib/pkgconfig"
   local archive
   local archives=(
@@ -792,8 +808,6 @@ build_avalonia_native() {
     libsksg.a
     libskshaper.a
     libwebp.a
-    libwebp_avx2.a
-    libwebp_sse41.a
     libwuffs.a
     libzlib.a
   )
@@ -808,13 +822,13 @@ build_avalonia_native() {
   (
     cd "$skia_dir"
     python3 tools/git-sync-deps
-    PKG_CONFIG_PATH="$pkg_config_path" bin/gn gen "$skia_build" --args="
+    PKG_CONFIG_PATH="$pkg_config_path" "$skia_gn" gen "$skia_build" --args="
       is_official_build=true
       skia_enable_tools=false
       is_static_skiasharp=true
       use_PIC=true
       target_os=\"linux\"
-      target_cpu=\"x64\"
+      target_cpu=\"$linux_architecture\"
       skia_enable_ganesh=true
       skia_use_harfbuzz=false
       skia_use_icu=false
@@ -834,11 +848,14 @@ build_avalonia_native() {
       cxx=\"clang++\"
       ar=\"ar\"
     "
-    "$source_dir/externals/depot_tools/ninja" \
+    ninja \
       -C "$skia_build" -j "$jobs" SkiaSharp HarfBuzzSharp
   )
 
   mkdir -p "$install/lib"
+  for archive in "$skia_build"/libwebp_*.a; do
+    [[ ! -f "$archive" ]] || archives+=("${archive##*/}")
+  done
   for archive in "${archives[@]}"; do
     assert_archive "$skia_build/$archive"
     install -m 0644 "$skia_build/$archive" "$install/lib/$archive"
@@ -856,4 +873,4 @@ if [[ "$component" == all || "$component" == avalonia ]]; then
   build_avalonia_native
 fi
 
-echo "CANX_STATIC_NATIVE_BUILD_OK platform=linux-x64 component=$component root=$static_root"
+echo "CANX_STATIC_NATIVE_BUILD_OK platform=$linux_runtime component=$component root=$static_root"

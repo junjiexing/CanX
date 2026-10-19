@@ -3,8 +3,9 @@
 set -euo pipefail
 
 repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-release_root="${CANX_RELEASE_OUTPUT:-$repository_root/artifacts/release/linux-x64}"
-static_root="${CANX_STATIC_ROOT:-$repository_root/.cache/static-native/linux-x64}"
+source "$repository_root/scripts/support/linux-architecture.sh"
+release_root="${CANX_RELEASE_OUTPUT:-$repository_root/artifacts/release/$linux_runtime}"
+static_root="${CANX_STATIC_ROOT:-$repository_root/.cache/static-native/$linux_runtime}"
 source_root="$static_root/sources"
 native_lock="$repository_root/native/sources-linux-x64.lock"
 quickjs_lock="$repository_root/spikes/CanX.Spikes.QuickJsInterop/native-source.lock"
@@ -39,7 +40,7 @@ if [[ "${CANX_ALLOW_DIRTY_RELEASE:-0}" != 1 ]] && [[ -n "$(git -C "$repository_r
 fi
 
 mkdir -p "$release_root"
-package_name="CanX-$version-linux-x64-source"
+package_name="CanX-$version-$linux_runtime-source"
 archive="$release_root/$package_name.tar.gz"
 [[ ! -e "$archive" ]] || { echo "source archive already exists: $archive" >&2; exit 2; }
 

@@ -18,6 +18,7 @@ SBOM、第三方许可证 bundle 与 Ubuntu 22.04 CI 已落地；正式 glibc 2.
 - [插件目录与构建](plugins/README.md)
 - [阶段 6 Agent 与 Tool 平台验收报告](docs/STAGE-6-AGENT.zh-CN.md)
 - [阶段 7 Linux x64 发布工程](docs/STAGE-7-RELEASE.zh-CN.md)
+- [GitHub CI、构建产物与 Release 发布](docs/CI.zh-CN.md)
 - [阶段 7 Android 实现与验证](docs/STAGE-7-ANDROID.zh-CN.md)
 - [AI 可用的全部 Tool 与调用参考](docs/AI-TOOLS.zh-CN.md)
 - [Linux x64 FFmpeg / libmpv 功能矩阵](docs/MPV-FFMPEG-FEATURES-linux-x64.md)
@@ -38,7 +39,9 @@ SBOM、第三方许可证 bundle 与 Ubuntu 22.04 CI 已落地；正式 glibc 2.
 | 目标 | 构建主机 | 当前发布方式 |
 |---|---|---|
 | Windows x64 | Windows x64 | NativeAOT 静态单文件 EXE |
+| Windows ARM64 | Windows x64 + MSVC ARM64 交叉工具链 | NativeAOT 静态单文件 EXE；ARM64 设备运行验收待完成 |
 | Linux x64 | Linux x64；Windows 可使用 WSL2 Linux 环境 | NativeAOT 静态主程序，正式发行基线为 Ubuntu 22.04 / glibc 2.35 |
+| Linux ARM64 | Linux ARM64，原生 Docker / Podman | NativeAOT 静态主程序，Ubuntu 22.04 / glibc 2.35；首次完整构建待 CI 验证 |
 | Android ARM64 / x64 | Linux 或 macOS；Windows 可使用 WSL2 Linux 环境 | NativeAOT APK；Android NativeAOT 仍为 experimental |
 | macOS ARM64 | macOS ARM64 | 自包含 `.app`，当前打包脚本关闭 NativeAOT |
 | iOS 设备 / 模拟器 | macOS + Xcode | 仅 NativeAOT 验证项目，尚无完整应用发布流水线 |
@@ -84,6 +87,20 @@ PDB 单独输出到 `artifacts/symbols/win-x64/`。脚本会执行 PE 原生依�
 验证版输出到 `artifacts/verify/win-x64/`，符号位于
 `artifacts/verify/win-x64-symbols/`，不会覆盖正式产物。
 
+#### Windows ARM64
+
+额外安装 Visual Studio 的 MSVC ARM64 工具。沿用同一发布入口，但显式指定架构：
+
+```powershell
+.\scripts\publish-static-app-windows-x64.ps1 -Architecture arm64
+.\scripts\publish-static-app-windows-x64.ps1 -Architecture arm64 -SkipNativeBuild
+```
+
+默认缓存独立放在 `.cache/windows-msvc-arm64/`，应用和符号分别在
+`artifacts/publish/win-arm64/`、`artifacts/symbols/win-arm64/`。x64 缓存不能用于 ARM64。
+原生依赖使用 `arm64-windows-static`，Meson / aria2 / CMake 和 NativeAOT 均使用 ARM64 目标；
+产物会核验 PE 架构。交叉编译不代表已在 ARM64 设备完成 smoke 或播放验收。
+
 ### Linux x64
 
 #### 本机开发
@@ -127,6 +144,12 @@ scripts/run-ubuntu-22.04-linux-x64.sh bash -lc '
 ```
 
 打包要求干净的 Git 工作区且同版本归档不存在，输出到 `artifacts/release/linux-x64/`。
+
+同一套发布、打包、校验脚本也支持 Linux ARM64：在 ARM64 Linux 主机上原样执行上述
+容器与发布命令即可，脚本自动选择 ARM64 容器、SDK 和原生编译目标。
+应用、符号和归档分别输出到 `artifacts/publish/linux-arm64/`、
+`artifacts/symbols/linux-arm64/`、`artifacts/release/linux-arm64/`。
+不支持在 x64 主机上仅设置 `CANX_LINUX_ARCHITECTURE=arm64` 进行交叉构建。
 完整验收命令和待完成的发布门槛见 [Linux x64 发布工程](docs/STAGE-7-RELEASE.zh-CN.md)。
 
 需要运行应用内 smoke 的验证版时，在同一构建环境中执行

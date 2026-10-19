@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  workflow_call:
+    inputs:
+      commit:
+        description: Exact source commit selected by the build workflow
+        required: false
+        type: string
+  push:
+    branches-ignore: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ inputs.commit || github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ inputs.commit == '' }}
+
+jobs:
+  test:
+    name: Test ${{ matrix.suite }} (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, ubuntu-24.04-arm, windows-2022]
+        suite: [Foundation, Plugins, Agent]
+    steps:
+      - name: Check out source
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          ref: ${{ inputs.commit || github.sha }}
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          global-json-file: global.json
+
+      - name: Run tests without building development native sidecars
+        run: >-
+          dotnet test tests/CanX.${{ matrix.suite }}.Tests/CanX.${{ matrix.suite }}.Tests.csproj
+          --configuration Release --logger trx --results-directory artifacts/test-results
+          --filter "FullyQualifiedName!~CanX.Foundation.Tests.PlaybackOverlayPointerTests"
+          -p:CanXDevelopmentAria2Sidecar=
+
+      - name: Run playback headless tests in an isolated process
+        if: matrix.suite == 'Foundation'
+        run: >-
+          dotnet test tests/CanX.Foundation.Tests/CanX.Foundation.Tests.csproj
+          --configuration Release --no-build --no-restore
+          --logger trx --results-directory artifacts/test-results
+          --filter FullyQualifiedName~CanX.Foundation.Tests.PlaybackOverlayPointerTests
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: tests-${{ matrix.os }}-${{ matrix.suite }}
+          path: artifacts/test-results/*.trx
+          if-no-files-found: warn
+          retention-days: 14

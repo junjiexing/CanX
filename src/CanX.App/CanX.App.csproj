@@ -49,7 +49,7 @@
     <PackageReference Include="Markdown.Avalonia.Tight" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(RuntimeIdentifier)' == 'win-x64'">
+  <ItemGroup Condition="'$(RuntimeIdentifier)' == 'win-x64' or '$(RuntimeIdentifier)' == 'win-arm64'">
     <PackageReference Include="Optris.StaticGraphics.Avalonia.OpenGL" />
   </ItemGroup>
 

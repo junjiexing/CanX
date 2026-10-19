@@ -20,6 +20,12 @@ vcpkg="$(cygpath -u "$CANX_VCPKG_INSTALLED")"
 compat="$(cygpath -u "$CANX_WINDOWS_COMPAT_INCLUDE")"
 llvm_bin="$(cygpath -u "$CANX_LLVM_BIN")"
 jobs="${CANX_JOBS:-1}"
+architecture="${CANX_WINDOWS_ARCHITECTURE:-x64}"
+case "$architecture" in
+  x64) configure_host=x86_64-w64-mingw32; target_flags="" ;;
+  arm64) configure_host=aarch64-w64-mingw32; target_flags="--target=aarch64-pc-windows-msvc" ;;
+  *) echo "unsupported Windows architecture: $architecture" >&2; exit 2 ;;
+esac
 
 # Automake cannot detect clang's dependency mode through this MSYS2/MSVC
 # cross-toolchain, so header changes would otherwise leave stale objects in
@@ -43,9 +49,9 @@ export PKG_CONFIG=/usr/bin/pkg-config
 export PKG_CONFIG_LIBDIR="$vcpkg/lib/pkgconfig:$vcpkg/share/pkgconfig"
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
 export CPPFLAGS="-I$compat -I$vcpkg/include -D_WIN32_WINNT=0x0A00 -DNOMINMAX -D__MINGW32__=1 -D__MINGW64__=1 -Dstrcasecmp=_stricmp -Dstrncasecmp=_strnicmp -Dtzname=_tzname"
-export CFLAGS="-O2 -fms-runtime-lib=static"
-export CXXFLAGS="-O2 -fms-runtime-lib=static"
-export LDFLAGS="-fuse-ld=lld-link -L$vcpkg/lib"
+export CFLAGS="-O2 -fms-runtime-lib=static $target_flags"
+export CXXFLAGS="-O2 -fms-runtime-lib=static $target_flags"
+export LDFLAGS="-fuse-ld=lld-link -L$vcpkg/lib $target_flags"
 export ac_cv_header_winsock2_h=yes
 export ac_cv_header_ws2tcpip_h=yes
 export ac_cv_type_struct_timespec=yes
@@ -60,7 +66,7 @@ cd "$build_dir"
 
 ARIA2_STATIC=yes "$source_dir/configure" \
   --build=x86_64-pc-msys \
-  --host=x86_64-w64-mingw32 \
+  --host="$configure_host" \
   --prefix="$install_dir" \
   --enable-libaria2 \
   --disable-aria2c \
