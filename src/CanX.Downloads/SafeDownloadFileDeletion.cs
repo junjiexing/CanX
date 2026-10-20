@@ -7,7 +7,12 @@ namespace CanX.Downloads;
 
 internal static partial class SafeDownloadFileDeletion
 {
-    private const int LinuxOpenFlags = 0x10000 | 0x20000 | 0x80000; // O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC
+    private static int LinuxOpenFlags => RuntimeInformation.ProcessArchitecture switch
+    {
+        Architecture.Arm64 => 0x4000 | 0x8000 | 0x80000,
+        Architecture.X64 => 0x10000 | 0x20000 | 0x80000,
+        _ => throw new PlatformNotSupportedException("Secure download deletion requires Linux x64 or ARM64.")
+    };
     private const int NotFoundError = 2;
 
     public static void Delete(string rootDirectory, string candidatePath)
