@@ -44,8 +44,16 @@ jobs:
         run: >-
           dotnet test tests/CanX.${{ matrix.suite }}.Tests/CanX.${{ matrix.suite }}.Tests.csproj
           --configuration Release --logger trx --results-directory artifacts/test-results
-          --filter "FullyQualifiedName!~CanX.Foundation.Tests.PlaybackOverlayPointerTests"
+          --filter "FullyQualifiedName!~CanX.Foundation.Tests.PlaybackOverlayPointerTests&FullyQualifiedName!~CanX.Foundation.Tests.ImageViewerDecodeTests"
           -p:CanXDevelopmentAria2Sidecar=
+
+      - name: Run image decoding tests in an isolated process
+        if: matrix.suite == 'Foundation'
+        run: >-
+          dotnet test tests/CanX.Foundation.Tests/CanX.Foundation.Tests.csproj
+          --configuration Release --no-build --no-restore
+          --logger trx --results-directory artifacts/test-results
+          --filter FullyQualifiedName~CanX.Foundation.Tests.ImageViewerDecodeTests
 
       - name: Run playback headless tests in an isolated process
         if: matrix.suite == 'Foundation'
