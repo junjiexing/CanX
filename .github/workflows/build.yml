@@ -106,7 +106,7 @@ jobs:
       - name: Install MSYS2 Autotools frontend
         shell: pwsh
         run: |
-          & C:/msys64/usr/bin/bash.exe -lc 'pacman -Sy --noconfirm --needed autoconf automake libtool make pkgconf diffutils patch'
+          & C:/msys64/usr/bin/bash.exe -lc 'pacman -Sy --noconfirm --needed autoconf automake gettext-devel libtool make pkgconf diffutils patch'
           if ($LASTEXITCODE -ne 0) { throw 'MSYS2 build tools could not be installed.' }
 
       - name: Build and audit NativeAOT application
@@ -170,7 +170,7 @@ jobs:
           sudo rm -rf /usr/local/lib/android /opt/ghc /usr/local/.ghcup
           df -h .
           sudo apt-get update
-          sudo apt-get install -y autoconf automake build-essential cmake gperf libtool ninja-build pkg-config python3-pip nasm unzip zip
+          sudo apt-get install -y autoconf automake autopoint gettext build-essential cmake gperf libtool ninja-build pkg-config python3-pip nasm unzip zip
           python3 -m pip install --target .cache/python-tools meson==1.9.1
 
       - name: Cache pinned sources and native outputs
