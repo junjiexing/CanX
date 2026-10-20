@@ -11,11 +11,13 @@ ARG DOTNET_SDK_VERSION=10.0.400
 ARG DOTNET_SDK_SHA512=1033977dd837150e0814cf0c5d5b17ceb63925fda7ba2158b47258a4bd7c048cf82eac3bc1166f3146f53124a3f5fba09db1de1260d2ce96399860303b404b48
 ARG DOTNET_SDK_ARM64_SHA512=a1b45da58e5591fff909a6126ac6bfc1ef9c12bc72c0625f7815e83a82be1a902317ee96926cbbf81324a45c6abf2ed8102a216d0507879cc166159af78d1b77
 
-RUN sed -i \
+RUN apt-get update -o APT::Update::Error-Mode=any \
+    && apt-get install -y --no-install-recommends ca-certificates \
+    && sed -i \
         -e "s|http://archive.ubuntu.com/ubuntu/|https://snapshot.ubuntu.com/ubuntu/${UBUNTU_SNAPSHOT}/|g" \
         -e "s|http://security.ubuntu.com/ubuntu/|https://snapshot.ubuntu.com/ubuntu/${UBUNTU_SNAPSHOT}/|g" \
         /etc/apt/sources.list \
-    && apt-get update -o Acquire::Check-Valid-Until=false \
+    && apt-get update -o Acquire::Check-Valid-Until=false -o APT::Update::Error-Mode=any \
     && apt-get install -y --no-install-recommends \
         autoconf \
         automake \
