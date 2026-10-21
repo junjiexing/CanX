@@ -72,6 +72,7 @@ jobs:
       version: ${{ needs.metadata.outputs.version }}
       commit: ${{ needs.metadata.outputs.commit }}
       architecture: ${{ matrix.architecture }}
+      snapshot: ${{ needs.metadata.outputs.tag != '' && '20250901T000000Z' || '' }}
 
   windows:
     needs: [metadata, tests]

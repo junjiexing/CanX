@@ -13,10 +13,10 @@ ARG DOTNET_SDK_ARM64_SHA512=a1b45da58e5591fff909a6126ac6bfc1ef9c12bc72c0625f7815
 
 RUN apt-get update -o APT::Update::Error-Mode=any -o Acquire::Retries=5 \
     && apt-get install -y --no-install-recommends ca-certificates \
-    && sed -i \
+    && if [ -n "$UBUNTU_SNAPSHOT" ]; then sed -i \
         -e "s|http://archive.ubuntu.com/ubuntu/|https://snapshot.ubuntu.com/ubuntu/${UBUNTU_SNAPSHOT}/|g" \
         -e "s|http://security.ubuntu.com/ubuntu/|https://snapshot.ubuntu.com/ubuntu/${UBUNTU_SNAPSHOT}/|g" \
-        /etc/apt/sources.list \
+        /etc/apt/sources.list; fi \
     && apt-get update -o Acquire::Check-Valid-Until=false -o APT::Update::Error-Mode=any -o Acquire::Retries=5 \
     && apt-get install -y --no-install-recommends \
         autoconf \

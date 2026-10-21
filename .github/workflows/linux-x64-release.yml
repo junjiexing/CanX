@@ -16,6 +16,11 @@ on:
         required: false
         default: x64
         type: string
+      snapshot:
+        description: Ubuntu snapshot timestamp; empty uses current Ubuntu 22.04 repositories
+        required: false
+        default: '20250901T000000Z'
+        type: string
 
 permissions:
   contents: read
@@ -27,6 +32,7 @@ jobs:
     env:
       CANX_LINUX_ARCHITECTURE: ${{ inputs.architecture }}
       RID: linux-${{ inputs.architecture }}
+      CANX_UBUNTU_SNAPSHOT: ${{ inputs.snapshot }}
     steps:
       - name: Check out source
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
@@ -47,7 +53,7 @@ jobs:
             .cache/static-native-ubuntu22.04
             .cache/native/quickjs
             .cache/nuget
-          key: linux-${{ inputs.architecture }}-jammy-v3-${{ hashFiles('native/sources-linux-x64.lock', 'native/aria2-shim/**', 'native/quickjs-shim/**', 'native/patches/**', 'native/linux-x64-ubuntu22.04.Dockerfile', 'spikes/CanX.Spikes.QuickJsInterop/native-source.lock', 'scripts/*linux-x64.sh', 'scripts/support/linux-architecture.sh', 'scripts/prepare-quickjs-spike.sh') }}
+          key: linux-${{ inputs.architecture }}-jammy-${{ inputs.snapshot || 'current' }}-v4-${{ hashFiles('native/sources-linux-x64.lock', 'native/aria2-shim/**', 'native/quickjs-shim/**', 'native/patches/**', 'native/linux-x64-ubuntu22.04.Dockerfile', 'spikes/CanX.Spikes.QuickJsInterop/native-source.lock', 'scripts/*linux-x64.sh', 'scripts/support/linux-architecture.sh', 'scripts/prepare-quickjs-spike.sh') }}
 
       - name: Build, audit and package in Ubuntu 22.04
         shell: bash

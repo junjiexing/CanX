@@ -76,7 +76,10 @@ iOS 当前只有验证项目，没有完整应用发布入口，未加入发布�
 第一次构建需要下载和编译大量依赖，可能接近托管 runner 的六小时上限；缓存容量不足会被 GitHub 淘汰。
 工具链或 runner 镜像重大变化后，应更新工作流中的缓存版本或删除缓存，避免复用不兼容的构建目录。
 Linux 两种架构的发行基线均由 Ubuntu 22.04 容器和 GLIBC 版本审计保证。
-容器为不同架构下载各自固定 SHA-512 的 .NET SDK；x64 继续使用 Ubuntu snapshot，
+非 tag 的日常 CI 使用当前 Ubuntu 22.04 官方软件源，避免快照服务持续 502/503 阻塞所有构建；
+tag / Release 构建和本地默认入口仍选择固定快照，日常与快照构建缓存分开。
+可用 `CANX_UBUNTU_SNAPSHOT` 显式指定时间戳，或设为空字符串选择当前 Jammy 源；切换本地构建源时需要清理旧原生缓存。
+容器为不同架构下载各自固定 SHA-512 的 .NET SDK；x64 的 tag/Release 和本地默认入口使用 Ubuntu snapshot，
 ARM64 沿用 Ubuntu 22.04 的 ports 软件源，系统构建工具并非同日期快照。
 保留原有 `*-x64` 脚本与 Linux 锁文件名以兼容现有入口，Windows 用 `-Architecture arm64`，
 Linux 脚本按本机架构选择目标；Linux 可设置 `CANX_LINUX_ARCHITECTURE` 进行校验，但不支持跨架构构建。
