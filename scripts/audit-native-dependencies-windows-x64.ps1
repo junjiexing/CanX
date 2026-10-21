@@ -7,7 +7,8 @@ param(
     [int] $MaximumApiSetLibraries = -1,
     [switch] $RejectDynamicUcrt,
     [ValidateSet('x64', 'arm64')]
-    [string] $ExpectedArchitecture
+    [string] $ExpectedArchitecture,
+    [string] $VulkanLoader
 )
 
 $ErrorActionPreference = 'Stop'
@@ -165,7 +166,11 @@ if ($MaximumApiSetLibraries -ge 0 -and $apiSetImports.Count -gt $MaximumApiSetLi
 }
 
 foreach ($import in $imports) {
-    $module = [CanX.NativeAudit]::LoadLibraryExW($import.Library, [IntPtr]::Zero, 0x800)
+    $libraryPath = $import.Library
+    if ($import.Library -ieq 'vulkan-1.dll' -and $VulkanLoader) {
+        $libraryPath = (Resolve-Path -LiteralPath $VulkanLoader).Path
+    }
+    $module = [CanX.NativeAudit]::LoadLibraryExW($libraryPath, [IntPtr]::Zero, 0x800)
     if ($module -eq [IntPtr]::Zero) {
         $failures.Add("missing library: $($import.Library) (Win32 $([Runtime.InteropServices.Marshal]::GetLastWin32Error()))")
         continue

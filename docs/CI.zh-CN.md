@@ -36,6 +36,9 @@ Release 不会被自动创建。先推 tag、之后才创建 Release 也可以�
 附件名称包含版本与平台，校验文件也按平台命名，下载后可在同目录执行 `sha256sum -c <校验文件>`。
 macOS 可使用 `shasum -a 256 -c <校验文件>`。
 Windows ZIP 自带主仓库 LICENSE / README；原生依赖完整发行合规材料仍应按对应平台的发布门槛审核。
+Windows 构建另行准备 x64 主机 Vulkan loader，供无显卡驱动的 runner 按导出符号执行依赖审计；
+不会跳过 `vulkan-1.dll` 检查，也不把这份主机 DLL 打入 ARM64 应用包。
+Windows 目标设备仍需 Vulkan loader 运行库，通常由显卡驱动提供；交叉审计不代替目标设备启动和播放验收。
 
 Windows、Linux、Android 均使用独立架构矩阵和 `fail-fast: false`；某个平台失败时，已完成平台的包仍可上传到已有 Release，
 但整个工作流仍会显示失败，不能把部分附件视为所有平台发布完成。重跑时同名附件会被替换，其他附件不变。

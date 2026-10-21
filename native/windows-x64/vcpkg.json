@@ -1,8 +1,8 @@
 {
   "name": "canx-windows-native-dependencies",
   "version-string": "1",
-  "builtin-baseline": "a1cae005c39be7b18ba319fced856b68d7276271",
   "supports": "windows & x64",
+  "builtin-baseline": "a1cae005c39be7b18ba319fced856b68d7276271",
   "dependencies": [
     "c-ares",
     "egl-registry",
@@ -40,13 +40,18 @@
     },
     {
       "name": "lcms",
-      "features": [ "fastfloat" ]
+      "features": [
+        "fastfloat"
+      ]
     },
     "libarchive",
     "libjpeg-turbo",
     {
       "name": "libssh2",
-      "features": [ "openssl", "zlib" ]
+      "features": [
+        "openssl",
+        "zlib"
+      ]
     },
     "luajit",
     "mujs",
@@ -54,10 +59,16 @@
     "spirv-cross",
     {
       "name": "sqlite3",
-      "features": [ "json1" ]
+      "features": [
+        "json1"
+      ]
     },
     "uchardet",
     "vulkan-loader",
+    {
+      "name": "vulkan-loader",
+      "host": true
+    },
     "zlib"
   ]
 }

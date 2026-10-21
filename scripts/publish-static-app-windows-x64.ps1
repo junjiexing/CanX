@@ -221,11 +221,17 @@ if (-not (Test-Path -LiteralPath $stagedExecutable)) {
     throw "NativeAOT executable was not produced: $stagedExecutable"
 }
 
-& (Join-Path $PSScriptRoot 'audit-native-dependencies-windows-x64.ps1') `
-    -Binary $stagedExecutable `
-    -ExpectedArchitecture $Architecture `
-    -RejectDynamicUcrt `
-    -MaximumApiSetLibraries 5
+$auditArguments = @{
+    Binary = $stagedExecutable
+    ExpectedArchitecture = $Architecture
+    RejectDynamicUcrt = $true
+    MaximumApiSetLibraries = 5
+}
+$hostVulkanLoader = Join-Path $CacheRoot 'vcpkg-installed\x64-windows\bin\vulkan-1.dll'
+if (Test-Path -LiteralPath $hostVulkanLoader) {
+    $auditArguments.VulkanLoader = $hostVulkanLoader
+}
+& (Join-Path $PSScriptRoot 'audit-native-dependencies-windows-x64.ps1') @auditArguments
 
 if ($SmokeBuild -and -not $SkipSmoke) {
     $stdout = Join-Path $CacheRoot 'windows-shell-smoke.stdout.log'
