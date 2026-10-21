@@ -153,7 +153,7 @@ function Get-PinnedSource {
     $directory = Join-Path $sourceRoot $Name
     $newSource = $false
     if (-not (Test-Path -LiteralPath (Join-Path $directory '.git'))) {
-        Invoke-Git @('clone', '--filter=blob:none', '--no-checkout', $entry.Repository, $directory) |
+        Invoke-Git @('clone', '--filter=blob:none', '--no-checkout', '--config', 'core.autocrlf=false', $entry.Repository, $directory) |
             Out-Host
         $newSource = $true
     }
