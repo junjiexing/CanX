@@ -376,6 +376,19 @@ function Build-Libplacebo {
     Invoke-Checked $python @('-m', 'mesonbuild.mesonmain', 'install', '-C', $build)
 }
 
+function Build-Lua {
+    $source = Get-PinnedSource 'lua'
+    $build = Join-Path $buildRoot 'lua-5.2.4'
+    $prefix = Join-Path $prefixRoot 'lua'
+    Invoke-Checked $cmake @(
+        '-S', (Join-Path $repositoryRoot 'native\windows-arm64\lua'),
+        '-B', $build, '-G', 'Visual Studio 17 2022', '-A', $cmakePlatform,
+        "-DLUA_SOURCE_DIR=$source", "-DCMAKE_INSTALL_PREFIX=$prefix",
+        '-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded')
+    Invoke-Checked $cmake @('--build', $build, '--config', 'Release', '--parallel', $Jobs.ToString())
+    Invoke-Checked $cmake @('--install', $build, '--config', 'Release')
+}
+
 function Build-Mpv {
     Initialize-MesonEnvironment
     $source = Get-PinnedSource 'mpv'
@@ -390,16 +403,19 @@ function Build-Mpv {
         (Join-Path $tripletRoot 'lib\pkgconfig'),
         (Join-Path $tripletRoot 'share\pkgconfig'))
     if ($Architecture -eq 'arm64') {
-        $luaHeader = Get-Content -LiteralPath (Join-Path $tripletRoot 'include\lua.h') -Raw
+        Build-Lua
+        $luaInstall = Join-Path $prefixRoot 'lua'
+        $luaHeader = Get-Content -LiteralPath (Join-Path $luaInstall 'include\lua.h') -Raw
         $luaMajor = [regex]::Match($luaHeader, '#define\s+LUA_VERSION_MAJOR(?:_N)?\s+"?(\d+)')
         $luaMinor = [regex]::Match($luaHeader, '#define\s+LUA_VERSION_MINOR(?:_N)?\s+"?(\d+)')
         if (-not $luaMajor.Success -or -not $luaMinor.Success) { throw 'Lua version was not found in lua.h.' }
         $luaVersion = '{0}.{1}' -f $luaMajor.Groups[1].Value, $luaMinor.Groups[1].Value
-        $luaPrefix = $tripletRoot.Replace('\', '/')
+        $luaPrefix = $luaInstall.Replace('\', '/')
         $luaPc = "prefix=$luaPrefix`nlibdir=`${prefix}/lib`nincludedir=`${prefix}/include`n`nName: Lua`nDescription: Lua interpreter`nVersion: $luaVersion`nLibs: -L`${libdir} -llua`nCflags: -I`${includedir}`n"
-        $luaPcDirectory = Join-Path $tripletRoot 'lib\pkgconfig'
+        $luaPcDirectory = Join-Path $luaInstall 'lib\pkgconfig'
         New-Item -ItemType Directory -Force $luaPcDirectory | Out-Null
         [IO.File]::WriteAllText((Join-Path $luaPcDirectory 'lua.pc'), $luaPc, [Text.UTF8Encoding]::new($false))
+        $pkgRoots = @($luaPcDirectory) + $pkgRoots
     }
     $env:PKG_CONFIG_LIBDIR = $pkgRoots -join ';'
     $env:PKG_CONFIG_PATH = $env:PKG_CONFIG_LIBDIR

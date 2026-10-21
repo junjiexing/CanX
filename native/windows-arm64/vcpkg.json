@@ -20,7 +20,6 @@
     "libarchive",
     "libjpeg-turbo",
     { "name": "libssh2", "features": ["openssl", "zlib"] },
-    "lua",
     "mujs",
     "shaderc",
     "spirv-cross",

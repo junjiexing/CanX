@@ -167,7 +167,7 @@ $libraries = @(
 if ($Architecture -eq 'arm64') {
     $libraries = @($libraries | Where-Object {
         [IO.Path]::GetFileName($_) -notin @('lua51.lib', 'vpl.lib')
-    }) + (Join-Path $vcpkgLibraryRoot 'lua.lib')
+    }) + (Join-Path $CacheRoot 'prefix\lua\lib\lua.lib')
 }
 
 $systemLibraries = @(

@@ -117,6 +117,8 @@ jobs:
         with:
           path: .cache/vcpkg-binaries
           key: vcpkg-windows-2022-${{ matrix.architecture }}-${{ hashFiles('native/sources-windows-x64.lock', 'native/windows-*/vcpkg.json') }}
+          restore-keys: |
+            vcpkg-windows-2022-${{ matrix.architecture }}-
 
       - name: Build pinned vcpkg dependencies
         shell: pwsh

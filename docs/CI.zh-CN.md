@@ -45,7 +45,7 @@ Linux ARM64 原生构建并运行托管测试，不使用 QEMU。Windows ARM64 �
 不会声称已在 Windows ARM64 设备完成启动、播放或硬解验收。
 ARM64 不强制链接 Intel QSV / oneVPL，也不启用这套 x64 发行配置中的 CUDA / AMF / NVENC；
 Linux 保留 VAAPI、Vulkan、OpenCL 和 V4L2 M2M 构建路径，Windows 保留 D3D 与 Vulkan 等通用路径，
-实际硬解仍取决于设备及驱动。Windows ARM64 使用 Lua，不使用 LuaJIT。
+实际硬解仍取决于设备及驱动。Windows ARM64 使用与 Linux 同一锁定源码提交的 Lua 5.2.4，不使用 LuaJIT。
 
 ## macOS 准备
 
