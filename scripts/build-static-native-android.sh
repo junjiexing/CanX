@@ -325,7 +325,7 @@ build_subtitles() {
     )
   fi
   meson_build libass "$source/libass" \
-    -Dtest=disabled -Dcompare=disabled -Dprofile=disabled -Dfuzz=disabled \
+    -Dtest=disabled -Dcheckasm=disabled -Dcompare=disabled -Dprofile=disabled -Dfuzz=disabled \
     -Dfontconfig=disabled -Ddirectwrite=disabled -Dcoretext=disabled \
     -Drequire-system-font-provider=false -Dlibunibreak=enabled \
     ${libass_architecture_option:+"$libass_architecture_option"}
