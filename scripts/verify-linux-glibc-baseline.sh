@@ -14,10 +14,10 @@ maximum="${2:-2.35}"
 command -v readelf >/dev/null 2>&1 || { echo "missing tool: readelf" >&2; exit 2; }
 
 machine="$(readelf -h "$binary" | sed -n 's/^[[:space:]]*Machine:[[:space:]]*//p')"
-[[ "$machine" == 'Advanced Micro Devices X86-64' ]] || {
-  echo "unexpected ELF architecture: $machine" >&2
-  exit 1
-}
+case "$machine" in
+  'Advanced Micro Devices X86-64'|AArch64) ;;
+  *) echo "unexpected ELF architecture: $machine" >&2; exit 1 ;;
+esac
 
 mapfile -t versions < <(
   readelf --version-info "$binary" 2>/dev/null |
