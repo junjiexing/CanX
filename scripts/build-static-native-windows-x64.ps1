@@ -274,6 +274,9 @@ function Find-VcpkgBuildTool {
 }
 
 function Initialize-MesonEnvironment {
+    foreach ($toolName in @('python3', 'meson', 'ninja')) {
+        Invoke-Checked (Join-Path $VcpkgRoot 'vcpkg.exe') @('fetch', $toolName) | Out-Host
+    }
     $script:python = Find-VcpkgBuildTool 'python.exe' 'Python'
     $script:meson = Find-VcpkgBuildTool 'meson.py' 'Meson'
     $script:ninja = Find-VcpkgBuildTool 'ninja.exe' 'Ninja'
