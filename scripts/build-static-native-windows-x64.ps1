@@ -151,9 +151,11 @@ function Get-PinnedSource {
     }
     $entry = $lockEntries[$Name]
     $directory = Join-Path $sourceRoot $Name
+    $newSource = $false
     if (-not (Test-Path -LiteralPath (Join-Path $directory '.git'))) {
         Invoke-Git @('clone', '--filter=blob:none', '--no-checkout', $entry.Repository, $directory) |
             Out-Host
+        $newSource = $true
     }
 
     if (-not (Test-Git @('-C', $directory, 'cat-file', '-e', "$($entry.Revision)^{commit}"))) {
@@ -162,11 +164,13 @@ function Get-PinnedSource {
     }
 
     $head = (& $git -C $directory rev-parse HEAD 2>$null)
-    if ($head -ne $entry.Revision) {
-        $worktreeClean = Test-Git @('-C', $directory, 'diff', '--quiet')
-        $indexClean = Test-Git @('-C', $directory, 'diff', '--cached', '--quiet')
-        if (-not $worktreeClean -or -not $indexClean) {
-            throw "Refusing to switch dirty cached source tree: $directory"
+    if ($newSource -or $head -ne $entry.Revision) {
+        if (-not $newSource) {
+            $worktreeClean = Test-Git @('-C', $directory, 'diff', '--quiet')
+            $indexClean = Test-Git @('-C', $directory, 'diff', '--cached', '--quiet')
+            if (-not $worktreeClean -or -not $indexClean) {
+                throw "Refusing to switch dirty cached source tree: $directory"
+            }
         }
         Invoke-Git @('-C', $directory, 'checkout', '--detach', $entry.Revision) |
             Out-Host

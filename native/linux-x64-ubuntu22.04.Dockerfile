@@ -1,5 +1,5 @@
 # Ubuntu 22.04 (glibc 2.35) is the oldest supported Linux x64 release.
-FROM ubuntu:22.04@sha256:829f6df217bcbae2b371026e81711d1a787c61b2967ad09d015063663ebafbf7
+FROM ubuntu:jammy-20250819@sha256:4e0171b9275e12d375863f2b3ae9ce00a4c53ddda176bd55868df97ac6f21a6e
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV DOTNET_ROOT=/usr/share/dotnet
@@ -34,6 +34,7 @@ RUN apt-get update -o APT::Update::Error-Mode=any -o Acquire::Retries=5 \
         gettext \
         gperf \
         gzip \
+        hwdata \
         libicu70 \
         libegl-dev \
         libgl-dev \

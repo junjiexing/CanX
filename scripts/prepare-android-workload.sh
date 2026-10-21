@@ -34,16 +34,21 @@ if [[ ! -f "$android_sdk/platforms/android-36/android.jar" || \
 fi
 
 android_ndk="$android_sdk/ndk/$android_ndk_version"
-if [[ ! -d "$android_ndk" ]]; then
+if [[ ! -f "$android_ndk/source.properties" ]]; then
   sdkmanager="$android_sdk/cmdline-tools/latest/bin/sdkmanager"
   [[ -x "$sdkmanager" ]] || {
     printf 'Android sdkmanager was not installed under %s\n' "$android_sdk" >&2
     exit 1
   }
-  JAVA_HOME="$java_sdk" ANDROID_SDK_ROOT="$android_sdk" \
-    "$sdkmanager" "ndk;$android_ndk_version"
+  for attempt in 1 2 3; do
+    if JAVA_HOME="$java_sdk" ANDROID_SDK_ROOT="$android_sdk" \
+      "$sdkmanager" "ndk;$android_ndk_version" && [[ -f "$android_ndk/source.properties" ]]; then
+      break
+    fi
+    printf 'Android NDK installation attempt %s failed\n' "$attempt" >&2
+  done
 fi
-if [[ ! -d "$android_ndk" ]]; then
+if [[ ! -f "$android_ndk/source.properties" ]]; then
   printf 'Android NDK %s was not installed under %s\n' "$android_ndk_version" "$android_sdk" >&2
   exit 1
 fi

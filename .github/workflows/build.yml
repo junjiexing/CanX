@@ -86,6 +86,7 @@ jobs:
       ARCHITECTURE: ${{ matrix.architecture }}
       RID: win-${{ matrix.architecture }}
       NATIVE_CACHE: .cache/windows-msvc-${{ matrix.architecture }}
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/.cache/vcpkg-binaries
     steps:
       - name: Check out source
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
@@ -108,6 +109,26 @@ jobs:
         run: |
           & C:/msys64/usr/bin/bash.exe -lc 'pacman -Sy --noconfirm --needed autoconf automake gettext-devel libtool make pkgconf diffutils patch'
           if ($LASTEXITCODE -ne 0) { throw 'MSYS2 build tools could not be installed.' }
+
+      - name: Restore vcpkg binary packages
+        id: vcpkg-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: .cache/vcpkg-binaries
+          key: vcpkg-windows-2022-${{ matrix.architecture }}-${{ hashFiles('native/sources-windows-x64.lock', 'native/windows-*/vcpkg.json') }}
+
+      - name: Build pinned vcpkg dependencies
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force $env:VCPKG_DEFAULT_BINARY_CACHE | Out-Null
+          ./scripts/build-static-native-windows-x64.ps1 -Component Dependencies -Architecture $env:ARCHITECTURE -CacheRoot $env:NATIVE_CACHE -Jobs 2
+
+      - name: Save completed vcpkg packages before application build
+        if: steps.vcpkg-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: .cache/vcpkg-binaries
+          key: ${{ steps.vcpkg-cache.outputs.cache-primary-key }}
 
       - name: Build and audit NativeAOT application
         shell: pwsh

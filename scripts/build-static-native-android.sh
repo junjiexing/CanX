@@ -149,11 +149,11 @@ meson_build() {
   if [[ -f "$build/$name/meson-private/coredata.dat" ]]; then
     run_meson setup --reconfigure "$build/$name" "$source_dir" \
       --cross-file "$cross" --prefix "$prefix" --libdir lib \
-      --buildtype release --default-library static --prefer-static -Db_staticpic=true "$@"
+      --buildtype release --default-library static --prefer-static -Db_staticpic=true -Db_pie=false "$@"
   else
     run_meson setup "$build/$name" "$source_dir" \
       --cross-file "$cross" --prefix "$prefix" --libdir lib \
-      --buildtype release --default-library static --prefer-static -Db_staticpic=true "$@"
+      --buildtype release --default-library static --prefer-static -Db_staticpic=true -Db_pie=false "$@"
   fi
   run_meson compile -C "$build/$name" -j "$jobs"
   run_meson install -C "$build/$name"
