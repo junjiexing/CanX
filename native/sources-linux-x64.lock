@@ -20,7 +20,7 @@ libdisplay-info|https://gitlab.freedesktop.org/emersion/libdisplay-info.git|66b8
 nasm|https://github.com/netwide-assembler/nasm.git|e9fac2faa62647bb50f1a61c26212c63c87090ae|BSD-2-Clause (build-only)
 meson|https://github.com/mesonbuild/meson.git|33eb51948be7f15890369f798f150a9f6c21c710|Apache-2.0 (build-only)
 dav1d|https://code.videolan.org/videolan/dav1d.git|42b2b24fb8819f1ed3643aa9cf2a62f03868e3aa|BSD-2-Clause
-libvpx|https://chromium.googlesource.com/webm/libvpx|d168454ecd099805c675d4a98c66f4891373302a|BSD-3-Clause
+libvpx|https://github.com/webmproject/libvpx.git|d168454ecd099805c675d4a98c66f4891373302a|BSD-3-Clause
 opus|https://github.com/xiph/opus.git|ddbe48383984d56acd9e1ab6a090c54ca6b735a6|BSD-3-Clause
 ogg|https://github.com/xiph/ogg.git|be05b13e98b048f0b5a0f5fa8ce514d56db5f822|BSD-3-Clause
 vorbis|https://github.com/xiph/vorbis.git|0657aee69dec8508a0011f47f3b69d7538e9d262|BSD-3-Clause
