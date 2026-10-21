@@ -843,7 +843,7 @@ build_avalonia_native() {
       skia_enable_skottie=true
       skia_use_vulkan=true
       extra_asmflags=[]
-      extra_cflags=[\"-DSKIA_C_DLL\",\"-DHAVE_SYSCALL_GETRANDOM\",\"-DXML_DEV_URANDOM\"]
+      extra_cflags=[\"-DSKIA_C_DLL\",\"-DHAVE_SYSCALL_GETRANDOM\",\"-DXML_DEV_URANDOM\",\"-I$mpv_deps/include\"]
       cc=\"clang\"
       cxx=\"clang++\"
       ar=\"ar\"
