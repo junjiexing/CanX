@@ -257,29 +257,34 @@ function Install-Dependencies {
         '--disable-metrics')
 }
 
-function Find-VcpkgBuildTool {
+function Resolve-VcpkgHostTool {
     param(
-        [Parameter(Mandatory = $true)] [string] $Filter,
-        [Parameter(Mandatory = $true)] [string] $Description
+        [Parameter(Mandatory = $true)] [string] $Name
     )
 
-    $tool = Get-ChildItem -LiteralPath (Join-Path $VcpkgRoot 'downloads\tools') `
-        -Recurse -File -Filter $Filter -ErrorAction SilentlyContinue |
-        Sort-Object LastWriteTime -Descending |
-        Select-Object -First 1
-    if (-not $tool) {
-        throw "$Description was not found in the vcpkg tool cache. Run the Dependencies component first."
+    $output = & (Join-Path $VcpkgRoot 'vcpkg.exe') fetch $Name
+    if ($LASTEXITCODE -ne 0) {
+        throw "vcpkg could not fetch host tool: $Name"
     }
-    return $tool.FullName
+    $toolPath = $output | Where-Object {
+        $_ -match '^[A-Za-z]:[\\/]' -and (Test-Path -LiteralPath $_ -PathType Leaf)
+    } | Select-Object -Last 1
+    if (-not $toolPath) {
+        throw "vcpkg did not return an existing host tool path: $Name"
+    }
+    return $toolPath
 }
 
 function Initialize-MesonEnvironment {
-    foreach ($toolName in @('python3', 'meson', 'ninja')) {
-        Invoke-Checked (Join-Path $VcpkgRoot 'vcpkg.exe') @('fetch', $toolName) | Out-Host
+    $script:python = Resolve-VcpkgHostTool 'python3'
+    $script:ninja = Resolve-VcpkgHostTool 'ninja'
+    $pythonTools = Join-Path $CacheRoot 'python-tools'
+    $script:meson = Join-Path $pythonTools 'mesonbuild\mesonmain.py'
+    if (-not (Test-Path -LiteralPath $meson)) {
+        Invoke-Checked $python @('-m', 'pip', 'install', '--disable-pip-version-check',
+            '--target', $pythonTools, 'meson==1.9.1') | Out-Host
     }
-    $script:python = Find-VcpkgBuildTool 'python.exe' 'Python'
-    $script:meson = Find-VcpkgBuildTool 'meson.py' 'Meson'
-    $script:ninja = Find-VcpkgBuildTool 'ninja.exe' 'Ninja'
+    $env:PYTHONPATH = "$pythonTools;$env:PYTHONPATH"
     $pkgconf = Join-Path $hostTripletRoot 'tools\pkgconf\pkgconf.exe'
     if (-not (Test-Path -LiteralPath $pkgconf)) {
         throw "pkgconf was not installed at $pkgconf"
@@ -299,7 +304,7 @@ function Invoke-MesonSetup {
         [Parameter(Mandatory = $true)] [string[]] $Options
     )
 
-    $arguments = @($meson, 'setup', $BuildDirectory, $SourceDirectory) + $Options
+    $arguments = @('-m', 'mesonbuild.mesonmain', 'setup', $BuildDirectory, $SourceDirectory) + $Options
     if ($Architecture -eq 'arm64') {
         $crossFile = Join-Path $CacheRoot 'meson-arm64.ini'
         $pkgconfPath = (Join-Path $hostTripletRoot 'tools\pkgconf\pkgconf.exe').Replace('\', '/')
@@ -367,8 +372,8 @@ function Build-Libplacebo {
         "-Dcpp_args=-I$($tripletRoot.Replace('\', '/'))/include",
         "-Dprefix=$prefix", '-Dlibdir=lib', '-Dbuildtype=release',
         '-Ddefault_library=static')
-    Invoke-Checked $python @($meson, 'compile', '-C', $build, '-j', $Jobs.ToString())
-    Invoke-Checked $python @($meson, 'install', '-C', $build)
+    Invoke-Checked $python @('-m', 'mesonbuild.mesonmain', 'compile', '-C', $build, '-j', $Jobs.ToString())
+    Invoke-Checked $python @('-m', 'mesonbuild.mesonmain', 'install', '-C', $build)
 }
 
 function Build-Mpv {
@@ -419,8 +424,8 @@ function Build-Mpv {
         '-Dd3d-hwaccel=enabled', '-Dd3d9-hwaccel=enabled',
         "-Dprefix=$prefix", '-Dlibdir=lib', '-Dbuildtype=release',
         '-Ddefault_library=static')
-    Invoke-Checked $python @($meson, 'compile', '-C', $build, '-j', $Jobs.ToString())
-    Invoke-Checked $python @($meson, 'install', '-C', $build)
+    Invoke-Checked $python @('-m', 'mesonbuild.mesonmain', 'compile', '-C', $build, '-j', $Jobs.ToString())
+    Invoke-Checked $python @('-m', 'mesonbuild.mesonmain', 'install', '-C', $build)
 }
 
 function Resolve-Msys2Root {
