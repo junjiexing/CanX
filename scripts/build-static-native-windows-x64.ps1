@@ -383,10 +383,10 @@ function Build-Mpv {
         (Join-Path $tripletRoot 'share\pkgconfig'))
     if ($Architecture -eq 'arm64') {
         $luaHeader = Get-Content -LiteralPath (Join-Path $tripletRoot 'include\lua.h') -Raw
-        $luaVersionMatch = [regex]::Match($luaHeader, '#define\s+LUA_VERSION_NUM\s+(\d+)')
-        if (-not $luaVersionMatch.Success) { throw 'Lua version was not found in lua.h.' }
-        $versionNumber = [int]$luaVersionMatch.Groups[1].Value
-        $luaVersion = '{0}.{1}' -f [Math]::Floor($versionNumber / 100), ($versionNumber % 100)
+        $luaMajor = [regex]::Match($luaHeader, '#define\s+LUA_VERSION_MAJOR(?:_N)?\s+"?(\d+)')
+        $luaMinor = [regex]::Match($luaHeader, '#define\s+LUA_VERSION_MINOR(?:_N)?\s+"?(\d+)')
+        if (-not $luaMajor.Success -or -not $luaMinor.Success) { throw 'Lua version was not found in lua.h.' }
+        $luaVersion = '{0}.{1}' -f $luaMajor.Groups[1].Value, $luaMinor.Groups[1].Value
         $luaPrefix = $tripletRoot.Replace('\', '/')
         $luaPc = "prefix=$luaPrefix`nlibdir=`${prefix}/lib`nincludedir=`${prefix}/include`n`nName: Lua`nDescription: Lua interpreter`nVersion: $luaVersion`nLibs: -L`${libdir} -llua`nCflags: -I`${includedir}`n"
         $luaPcDirectory = Join-Path $tripletRoot 'lib\pkgconfig'
