@@ -195,15 +195,22 @@ jobs:
               cd "$project"
               npm ci --ignore-scripts
               # Mirrors the local gate in scripts/verify-plugin-platform-windows-x64.ps1:
-              # npm test builds dist/, lint checks the manifest against it, and
-              # pack:canx writes <manifest-id>-<version>.canxplugin.
+              # npm test builds dist/, lint checks the manifest against it, and pack:canx
+              # writes <workspace>/artifacts/<manifest-id>-<version>.canxplugin (the CLI
+              # treats --output as an exact file path, so collect the default outputs).
               npm test
               npm run lint
-              npm run pack:canx -- --output "$output"
+              npm run pack:canx
+              mv "$PWD"/artifacts/*.canxplugin "$output/"
             )
             plugins=$((plugins + 1))
           done
           [[ "$plugins" -gt 0 ]] || { echo 'No plugin projects were found.' >&2; exit 1; }
+          packages=$(ls "$output"/*.canxplugin | wc -l)
+          [[ "$packages" -eq "$plugins" ]] || {
+            echo "packed $plugins plugins but collected $packages packages." >&2
+            exit 1
+          }
           echo "packed plugins: $plugins"
           (cd "$output" && sha256sum ./*.canxplugin > "CanX-$VERSION-plugins-SHA256SUMS")
 
