@@ -26,7 +26,7 @@ permissions:
   contents: read
 
 jobs:
-  release:
+  package:
     runs-on: ${{ inputs.architecture == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     timeout-minutes: 360
     env:

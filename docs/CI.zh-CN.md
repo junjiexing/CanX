@@ -33,8 +33,13 @@ Release 不会被自动创建。先推 tag、之后才创建 Release 也可以�
 | macOS ARM64 | 显式启用的专用自托管 runner | `.app` ZIP、独立符号归档、许可证、SHA-256 校验文件 |
 
 每个平台的 Actions Artifact 名为 `release-<rid>`，保留 30 天；测试结果保留 14 天。
+插件包在 Ubuntu 24.04 单独构建（`release-plugins` Artifact，保留 30 天）：逐个执行插件的
+`npm test` / lint / `pack:canx`，产出 `org.canx.*-<版本>.canxplugin` 与 `CanX-<版本>-plugins-SHA256SUMS`，
+与 Release 附件使用同一份包；当前与本地 verify 一致，插件包不签名。
 附件名称包含版本与平台，校验文件也按平台命名，下载后可在同目录执行 `sha256sum -c <校验文件>`。
 macOS 可使用 `shasum -a 256 -c <校验文件>`。
+Release 附件不携带符号归档：符号与校验、二进制一起保留在 Actions Artifacts 中，
+汇总到 Release 时剔除 `*-symbols.*`，并从各平台校验文件移除对应行，保证 `sha256sum -c` 只校验 Release 实际包含的文件。
 Windows ZIP 自带主仓库 LICENSE / README；原生依赖完整发行合规材料仍应按对应平台的发布门槛审核。
 Windows 构建另行准备 x64 主机 Vulkan loader，供无显卡驱动的 runner 按导出符号执行依赖审计；
 审计在 `vulkan-1.dll` 缺失系统级解析时以该 loader 替代库定位并逐符号校验，视为合规依赖（不跳过 `vulkan-1.dll` 检查），
@@ -43,6 +48,9 @@ Windows 目标设备仍需 Vulkan loader 运行库，通常由显卡驱动提供
 
 Windows、Linux、Android 均使用独立架构矩阵和 `fail-fast: false`；某个平台失败时，已完成平台的包仍可上传到已有 Release，
 但整个工作流仍会显示失败，不能把部分附件视为所有平台发布完成。重跑时同名附件会被替换，其他附件不变。
+原生依赖一律只构建 Release 配置：Linux / Android 显式 `--buildtype release` 或 `CMAKE_BUILD_TYPE=Release`，
+Windows vcpkg 通过 `native/windows-*/triplets` 下的 overlay triplet 设置 `VCPKG_BUILD_TYPE=release`，
+日志中不再出现 Debug 编译。
 
 Windows / Linux ARM64 各自产出 `release-win-arm64` / `release-linux-arm64`，不与 x64 合包。
 Linux ARM64 原生构建并运行托管测试，不使用 QEMU。Windows ARM64 在 x64 runner 上交叉编译，
