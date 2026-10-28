@@ -10,7 +10,6 @@ release_root="${CANX_RELEASE_OUTPUT:-$repository_root/artifacts/release/$linux_r
 static_root="${CANX_STATIC_ROOT:-$repository_root/.cache/static-native/$linux_runtime}"
 quickjs_source_root="$repository_root/.cache/native/quickjs/source"
 version="${CANX_VERSION:-}"
-include_source=true
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -19,12 +18,8 @@ while [[ $# -gt 0 ]]; do
       version="$2"
       shift 2
       ;;
-    --skip-source)
-      include_source=false
-      shift
-      ;;
     *)
-      echo "usage: $0 [--version VERSION] [--skip-source]" >&2
+      echo "usage: $0 [--version VERSION]" >&2
       exit 2
       ;;
   esac
@@ -58,9 +53,8 @@ mkdir -p "$release_root"
 package_name="CanX-$version-$linux_runtime"
 archive="$release_root/$package_name.tar.gz"
 symbols_archive="$release_root/$package_name-symbols.tar.gz"
-source_archive="$release_root/$package_name-source.tar.gz"
 checksums="$release_root/SHA256SUMS"
-[[ ! -e "$archive" && ! -e "$symbols_archive" && ( "$include_source" == false || ! -e "$source_archive" ) ]] || {
+[[ ! -e "$archive" && ! -e "$symbols_archive" ]] || {
   echo "release output already exists for version $version" >&2
   exit 2
 }
@@ -94,27 +88,17 @@ tar --sort=name --owner=0 --group=0 --numeric-owner --mtime="@$source_date_epoch
 tar --sort=name --owner=0 --group=0 --numeric-owner --mtime="@$source_date_epoch" \
   -C "$staging_root" -cf - "$package_name-symbols" | gzip -n -9 > "$symbols_archive_temporary"
 
-if [[ "$include_source" == true ]]; then
-  CANX_VERSION="$version" \
-  CANX_RELEASE_OUTPUT="$release_root" \
-  CANX_STATIC_ROOT="$static_root" \
-    "$repository_root/scripts/package-corresponding-source-linux-x64.sh"
-fi
-
-# Do not expose the binary or symbols until the much larger corresponding
-# source archive has completed successfully.
+# Move into place only after both archives are fully written so a failed
+# run never leaves a partial package next to the previous release.
 mv -- "$archive_temporary" "$archive"
 mv -- "$symbols_archive_temporary" "$symbols_archive"
 
 checksums_temporary="$staging_root/SHA256SUMS"
 (
   cd "$release_root"
-  checksum_files=("${archive##*/}" "${symbols_archive##*/}")
-  [[ "$include_source" == false ]] || checksum_files+=("${source_archive##*/}")
-  sha256sum "${checksum_files[@]}"
+  sha256sum -- "${archive##*/}" "${symbols_archive##*/}"
 ) > "$checksums_temporary"
 mv -f -- "$checksums_temporary" "$checksums"
 
-printf 'CANX_RELEASE_PACKAGE_OK version=%s binary=%s symbols=%s source=%s checksums=%s\n' \
-  "$version" "$archive" "$symbols_archive" \
-  "$([[ "$include_source" == true ]] && printf '%s' "$source_archive" || printf '%s' skipped)" "$checksums"
+printf 'CANX_RELEASE_PACKAGE_OK version=%s binary=%s symbols=%s checksums=%s\n' \
+  "$version" "$archive" "$symbols_archive" "$checksums"

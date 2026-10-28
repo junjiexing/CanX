@@ -25,8 +25,8 @@ Release 不会被自动创建。先推 tag、之后才创建 Release 也可以�
 
 | 平台 | Runner | 附件 |
 |---|---|---|
-| Linux x64 | Ubuntu 24.04 runner 内的 Ubuntu 22.04 容器 | 应用、符号、完整对应源码、校验文件；沿用现有 SBOM / 许可证打包与审计 |
-| Linux ARM64 | Ubuntu 24.04 ARM64 runner 内的原生 Ubuntu 22.04 ARM64 容器 | NativeAOT 应用、独立符号、完整对应源码与校验文件，同样执行 GLIBC 2.35 基线审计 |
+| Linux x64 | Ubuntu 24.04 runner 内的 Ubuntu 22.04 容器 | 应用、符号、校验文件；沿用现有 SBOM / 许可证打包与审计 |
+| Linux ARM64 | Ubuntu 24.04 ARM64 runner 内的原生 Ubuntu 22.04 ARM64 容器 | NativeAOT 应用、独立符号与校验文件，同样执行 GLIBC 2.35 基线审计 |
 | Windows x64 | Windows 2022 | NativeAOT 应用 ZIP、独立符号 ZIP、SHA-256 校验文件 |
 | Windows ARM64 | Windows 2022 x64 runner，MSVC ARM64 交叉工具链 | NativeAOT 应用 ZIP、独立符号 ZIP、SHA-256 校验文件，校验 PE 的 ARM64 Machine 字段 |
 | Android ARM64 / x64 | Ubuntu 24.04，两个 ABI 独立任务 | NativeAOT APK、独立符号归档、许可证、SHA-256 校验文件 |
