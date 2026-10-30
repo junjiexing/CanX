@@ -74,7 +74,7 @@ checkout_source() {
 
   current_revision="$(git -C "$source_dir" rev-parse --verify -q HEAD 2>/dev/null || true)"
   if [[ "$new_source" == true || "$current_revision" != "$revision" ]]; then
-    if [[ "$new_source" == false && -n "$(git -C "$source_dir" status --porcelain 2>/dev/null)" ]]; then
+    if [[ "$new_source" == false && -n "$(git -C "$source_dir" status --porcelain --untracked-files=no 2>/dev/null)" ]]; then
       echo "refusing to replace modified cached source: $source_dir" >&2
       exit 1
     fi
@@ -206,6 +206,13 @@ fi
 # --- libunibreak (static, linked into libass) ---------------------------------
 if built libunibreak; then
   mkdir -p "$build_root/libunibreak"
+  # Fresh checkouts lack a committed configure script; regenerate it from the
+  # tracked bootstrap script each build so a revision bump cannot ship stale
+  # generated autotools files.
+  (
+    cd "$source_root/libunibreak"
+    ./bootstrap
+  )
   (
     cd "$build_root/libunibreak"
     CFLAGS='-O2 -fPIC' "$source_root/libunibreak/configure" \
