@@ -6,8 +6,7 @@ dotnet_path="${CANX_DOTNET:-$repository_root/.cache/dotnet/dotnet}"
 publish_dir="$repository_root/artifacts/publish/osx-arm64"
 app="$repository_root/artifacts/macos/CanX.app"
 symbols_dir="$repository_root/artifacts/symbols/osx-arm64"
-mpv_frameworks="${CANX_MACOS_MPV_FRAMEWORKS:-/Applications/IINA.app/Contents/Frameworks}"
-placebo="${CANX_MACOS_LIBPLACEBO:-$repository_root/.cache/macos/libplacebo-349-install/lib/libplacebo.349.dylib}"
+mpv_frameworks="$repository_root/.cache/macos/mpv-frameworks"
 quickjs="$repository_root/.cache/native/quickjs/macos-build/libcanx_quickjs.dylib"
 aria2="$repository_root/.cache/mac-native/aria2-shim/libcanx_aria2.dylib"
 homebrew_root="${CANX_MACOS_HOMEBREW_ROOT:-/opt/homebrew/opt}"
@@ -19,10 +18,13 @@ if [[ "${CANX_MACOS_SKIP_PUBLISH:-false}" != true ]]; then
     --property CanXProductionPublish=true \
     --output "$publish_dir"
 fi
-if [[ ! -f "$placebo" ]]; then
-  "$repository_root/scripts/build-macos-libplacebo.sh"
+if [[ ! -f "$mpv_frameworks/libmpv.2.dylib" ]]; then
+  "$repository_root/scripts/build-macos-mpv-frameworks.sh"
 fi
-for required in "$publish_dir/CanX.App" "$quickjs" "$aria2" "$mpv_frameworks/libmpv.2.dylib" "$placebo"; do
+if [[ ! -f "$quickjs" || ! -f "$aria2" ]]; then
+  "$repository_root/scripts/build-macos-shims.sh"
+fi
+for required in "$publish_dir/CanX.App" "$quickjs" "$aria2" "$mpv_frameworks/libmpv.2.dylib"; do
   [[ -f "$required" ]] || { echo "missing macOS bundle input: $required" >&2; exit 1; }
 done
 
@@ -54,20 +56,8 @@ for native_asset in libAvaloniaNative.dylib libHarfBuzzSharp.dylib libSkiaSharp.
 done
 find "$mpv_frameworks" -maxdepth 1 -type f -name '*.dylib' \
   -exec cp -p {} "$app/Contents/Frameworks/" \;
-rm -f "$app/Contents/Frameworks/libplacebo.338.dylib"
-cp "$placebo" "$app/Contents/Frameworks/libplacebo.349.dylib"
-install_name_tool -id @rpath/libplacebo.349.dylib \
-  "$app/Contents/Frameworks/libplacebo.349.dylib"
-placebo_lcms="$(otool -L "$app/Contents/Frameworks/libplacebo.349.dylib" | \
-  awk '/\/liblcms2\.2\.dylib/ { print $1; exit }')"
-if [[ -n "$placebo_lcms" ]]; then
-  install_name_tool -change "$placebo_lcms" @loader_path/liblcms2.2.dylib \
-    "$app/Contents/Frameworks/libplacebo.349.dylib"
-fi
 ln -s ../Frameworks/libmpv.2.dylib "$app/Contents/MacOS/libmpv.dylib"
 install_name_tool -add_rpath @loader_path "$app/Contents/Frameworks/libmpv.2.dylib"
-install_name_tool -change @rpath/libplacebo.338.dylib \
-  @rpath/libplacebo.349.dylib "$app/Contents/Frameworks/libmpv.2.dylib"
 
 cp "$homebrew_root/sqlite/lib/libsqlite3.dylib" \
   "$app/Contents/Frameworks/libsqlite3.dylib"

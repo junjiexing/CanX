@@ -202,19 +202,28 @@ ARM64 真机与 x64 模拟器的验证边界见 [Android 实现与验证](docs/S
 
 ### macOS ARM64
 
-当前 [macOS 打包脚本](scripts/package-app-macos.sh) 使用 `PublishAot=false`，生成自包含
-`.app`，不是 NativeAOT 发布。它不是干净环境的一键构建入口：需要先准备 Xcode 命令行工具、
-QuickJS/aria2 动态库、IINA Frameworks，以及脚本引用的 Homebrew SQLite、libssh2、c-ares、
-OpenSSL 依赖。默认路径和覆盖变量见脚本开头。
-
-上述输入齐全后，使用已安装的 .NET SDK 打包：
+macOS 构建不再复用任何外部应用的预编译库：libmpv 与全部运行时依赖
+（FFmpeg、libplacebo、libass、harfbuzz、freetype、fribidi、lcms2 等）都由
+[build-macos-mpv-frameworks.sh](scripts/build-macos-mpv-frameworks.sh)
+从 `native/sources-linux-x64.lock` 固定的提交编译为动态库，QuickJS / aria2 shim
+由 [build-macos-shims.sh](scripts/build-macos-shims.sh) 构建。锁文件之外的
+宿主工具（git / cmake / ninja / pkg-config / venv meson / autoconf 等）与
+aria2 的运行时依赖（Homebrew openssl@3、SQLite、libssh2、c-ares）可通过
+Homebrew 或 runner 镜像提供：
 
 ```bash
+brew install autoconf automake libtool cmake ninja pkg-config \
+  openssl@3 sqlite libssh2 c-ares
 CANX_DOTNET="$(command -v dotnet)" scripts/package-app-macos.sh
 ```
 
-应用输出到 `artifacts/macos/CanX.app`，PDB 单独放在 `artifacts/symbols/osx-arm64/`。
-不能仅把 `PublishAot` 改为 `true` 就认为完成了 macOS NativeAOT 发布验收。
+[打包脚本](scripts/package-app-macos.sh) 会按需调用上述原生构建脚本，把
+`libmpv.2.dylib` 及其依赖 `@rpath` 引用复制进 `.app/Contents/Frameworks`，
+并生成自包含 `.app` 与 ad-hoc 签名。首次原生编译接近一小时以上，可多跑几次
+增量复用 `.cache/macos` 与 `.cache/upstream` 产物。应用输出到
+`artifacts/macos/CanX.app`，PDB 单独放在 `artifacts/symbols/osx-arm64/`。
+它不是 NativeAOT 发布：`publish-static-app-*` 还没有 macOS NativeAOT 验收，
+不能仅把 `PublishAot` 改为 `true` 就认为完成了 macOS 发布。
 
 ### iOS
 

@@ -287,23 +287,41 @@ jobs:
           compression-level: 0
 
   macos:
-    if: vars.CANX_MACOS_CI_ENABLED == 'true'
     needs: [metadata, tests]
-    runs-on: [self-hosted, macOS, ARM64, canx-release]
-    timeout-minutes: 180
+    runs-on: macos-15
+    timeout-minutes: 360
     env:
       VERSION: ${{ needs.metadata.outputs.version }}
+      # Binaries must match the Info.plist LSMinimumSystemVersion (13.0)
+      # rather than the runner image's macOS version.
+      MACOSX_DEPLOYMENT_TARGET: '13.0'
     steps:
       - name: Check out source
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
         with:
           ref: ${{ needs.metadata.outputs.commit }}
-          clean: false
 
       - name: Set up .NET
         uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.4.0
         with:
           global-json-file: global.json
+
+      - name: Cache pinned sources and native build outputs
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            .cache/upstream
+            .cache/native/quickjs
+            .cache/mac-native
+            .cache/macos
+            .cache/macos-build-venv
+          key: macos-15-v1-${{ hashFiles('native/sources-linux-x64.lock', 'native/aria2-shim/**', 'native/quickjs-shim/**', 'native/patches/**', 'spikes/CanX.Spikes.QuickJsInterop/native-source.lock', 'scripts/build-macos-*', 'scripts/package-app-macos.sh') }}
+
+      - name: Install build tools and native runtime dependencies
+        run: |
+          set -euo pipefail
+          brew install autoconf automake libtool cmake ninja pkg-config \
+            openssl@3 sqlite libssh2 c-ares
 
       - name: Build and package macOS application
         run: |

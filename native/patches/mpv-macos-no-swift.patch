@@ -1,0 +1,70 @@
+CanX builds macOS libmpv without Swift (`-Dswift-build=disabled`) to keep the
+distributed .app framework set C-only: mpv's macOS clipboard backend
+unconditionally includes the Swift-generated `osdep/mac/swift.h`, and the
+input media-keys plus player/app bridging call functions that only the Swift
+glue defines. CanX does not use mpv's own clipboard, media-key or mac-client
+backends (the VO clipboard and normal client API remain), so drop or guard
+them instead of enabling Swift.
+
+--- a/meson.build
++++ b/meson.build
+@@ -436,7 +436,7 @@
+     sources += files('osdep/language-mac.c',
+                      'osdep/utils-mac.c',
+                      'osdep/mac/app_bridge.m',
+-                     'player/clipboard/clipboard-mac.m')
++                     )
+     main_fn_source = files('osdep/main-fn-mac.c')
+ endif
+ 
+--- a/player/clipboard/clipboard.c
++++ b/player/clipboard/clipboard.c
+@@ -40,7 +40,7 @@
+ #if HAVE_WIN32_DESKTOP
+     &clipboard_backend_win32,
+ #endif
+-#if HAVE_COCOA
++#if 0 /* CanX: macOS backend needs Swift glue; not built for libmpv-only. */
+     &clipboard_backend_mac,
+ #endif
+ #if HAVE_WAYLAND && HAVE_WAYLAND_PROTOCOLS_1_39
+--- a/input/input.c
++++ b/input/input.c
+@@ -1745,7 +1745,7 @@
+ {
+     m_config_cache_update(ictx->opts_cache);
+ 
+-#if HAVE_COCOA
++#if HAVE_COCOA && HAVE_SWIFT /* CanX: media keys live in the Swift glue; libmpv-only builds have none. */
+     struct input_opts *opts = ictx->opts;
+ 
+     if (ictx->using_cocoa_media_keys != (opts->use_media_keys && !shutdown)) {
+--- a/player/main.c
++++ b/player/main.c
+@@ -196,7 +196,7 @@
+ 
+     osd_free(mpctx->osd);
+ 
+-#if HAVE_COCOA
++#if HAVE_COCOA && HAVE_SWIFT /* CanX: mac/UI input bridging is Swift-only; libmpv-only builds have none. */
+     cocoa_set_input_context(NULL);
+ #endif
+ 
+@@ -322,7 +322,7 @@
+     mp_clients_init(mpctx);
+     mpctx->osd = osd_create(mpctx->global);
+ 
+-#if HAVE_COCOA
++#if HAVE_COCOA && HAVE_SWIFT /* CanX: mac/UI input bridging is Swift-only; libmpv-only builds have none. */
+     cocoa_set_input_context(mpctx->input);
+ #endif
+ 
+@@ -417,7 +417,7 @@
+ 
+     MP_STATS(mpctx, "start init");
+ 
+-#if HAVE_COCOA
++#if HAVE_COCOA && HAVE_SWIFT /* CanX: the mac client only feeds the Swift glue; libmpv-only builds have none. */
+     mpv_handle *ctx = mp_new_client(mpctx->clients, "mac");
+     cocoa_set_mpv_handle(ctx);
+ #endif

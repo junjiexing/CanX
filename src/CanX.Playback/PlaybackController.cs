@@ -1261,7 +1261,7 @@ public sealed partial class PlaybackController : IPlaybackController
             if (ReadString("sub-ass-override", "scale") is "no" or "yes")
                 _engine.Command("set", "sub-ass-override", "scale");
             // Newer mpv versions can scale positioned ASS text as well. Older
-            // versions (including the macOS bundled libmpv) lack this option.
+            // versions lack this option, so only set it when mpv reports it.
             if (_engine.TryGetFlag("sub-scale-signs", out _))
                 _engine.Command("set", "sub-scale-signs", "yes");
             _engine.Command("set", "sub-scale", scale.ToString("R", CultureInfo.InvariantCulture));
