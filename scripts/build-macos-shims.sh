@@ -64,6 +64,7 @@ apply_source_patch() {
 # ---------------------------------------------------------------------------
 source "$repository_root/spikes/CanX.Spikes.QuickJsInterop/native-source.lock"
 archive="$quickjs_root/quickjs.tar.xz"
+mkdir -p "$quickjs_root" "$quickjs_root/source"
 
 if [[ ! -f "$archive" ]] || [[ "$(shasum -a 256 "$archive" | awk '{ print $1 }')" != "$sha256" ]]; then
   curl -fsSL "$url" --output "$archive"
