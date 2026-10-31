@@ -1,6 +1,7 @@
 # name|repository|revision|license
 #
-# Runtime native sources used by scripts/build-static-native-linux-x64.sh.
+# Runtime native sources used by scripts/build-static-native-linux-x64.sh,
+# scripts/prepare-android-sources.sh and scripts/build-macos-mpv-frameworks.sh.
 # Revisions are immutable commits; tags and moving branches are intentionally
 # not accepted by the build script. gperf is a build-only dependency.
 aria2|https://github.com/junjiexing/aria2.git|0782d46235cf4fa0b9931fcebc2a5eb1ed56fe8c|GPL-2.0-or-later WITH OpenSSL-exception

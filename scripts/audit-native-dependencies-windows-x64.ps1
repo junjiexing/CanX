@@ -148,6 +148,14 @@ if ($importRva -ne 0) {
 }
 
 $systemRoot = [IO.Path]::GetFullPath([Environment]::GetFolderPath('System')).TrimEnd('\') + '\'
+# Headless runners have no GPU driver, so vulkan-1.dll is absent from the
+# system directory. Verify its exported symbols through the pinned host
+# loader instead; the loader substitutes path resolution only, and every
+# entry point is still probed below.
+$pinnedVulkanLoader = $null
+if ($VulkanLoader) {
+    $pinnedVulkanLoader = (Resolve-Path -LiteralPath $VulkanLoader).Path
+}
 $failures = [Collections.Generic.List[string]]::new()
 $apiSetImports = @($imports | Where-Object {
     $_.Library.StartsWith('api-ms-win-', [StringComparison]::OrdinalIgnoreCase)
@@ -167,8 +175,9 @@ if ($MaximumApiSetLibraries -ge 0 -and $apiSetImports.Count -gt $MaximumApiSetLi
 
 foreach ($import in $imports) {
     $libraryPath = $import.Library
-    if ($import.Library -ieq 'vulkan-1.dll' -and $VulkanLoader) {
-        $libraryPath = (Resolve-Path -LiteralPath $VulkanLoader).Path
+    $usesPinnedLoader = [bool] ($import.Library -ieq 'vulkan-1.dll' -and $pinnedVulkanLoader)
+    if ($usesPinnedLoader) {
+        $libraryPath = $pinnedVulkanLoader
     }
     $module = [CanX.NativeAudit]::LoadLibraryExW($libraryPath, [IntPtr]::Zero, 0x800)
     if ($module -eq [IntPtr]::Zero) {
@@ -179,7 +188,8 @@ foreach ($import in $imports) {
         $pathBuilder = [Text.StringBuilder]::new(32768)
         [void][CanX.NativeAudit]::GetModuleFileNameW($module, $pathBuilder, $pathBuilder.Capacity)
         $loadedPath = $pathBuilder.ToString()
-        if (-not $loadedPath.StartsWith($systemRoot, [StringComparison]::OrdinalIgnoreCase)) {
+        if (-not $loadedPath.StartsWith($systemRoot, [StringComparison]::OrdinalIgnoreCase) -and
+            -not ($usesPinnedLoader -and $loadedPath.StartsWith($pinnedVulkanLoader, [StringComparison]::OrdinalIgnoreCase))) {
             $failures.Add("non-system dependency: $($import.Library) -> $loadedPath")
         }
         foreach ($symbol in $import.Symbols) {

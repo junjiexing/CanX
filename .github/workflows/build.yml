@@ -95,12 +95,12 @@ jobs:
           ref: ${{ needs.metadata.outputs.commit }}
 
       - name: Set up .NET
-        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.4.0
         with:
           global-json-file: global.json
 
       - name: Cache native dependencies and build outputs
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ env.NATIVE_CACHE }}
           key: windows-2022-${{ matrix.architecture }}-v2-${{ hashFiles('native/sources-windows-x64.lock', 'native/aria2-shim/**', 'native/quickjs-shim/**', 'native/patches/**', 'native/windows-*/**', 'spikes/CanX.Spikes.QuickJsInterop/native-source.lock', 'scripts/build-static-native-windows-x64.ps1', 'scripts/support/**') }}
@@ -113,7 +113,7 @@ jobs:
 
       - name: Restore vcpkg binary packages
         id: vcpkg-cache
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .cache/vcpkg-binaries
           key: vcpkg-windows-2022-${{ matrix.architecture }}-${{ hashFiles('native/sources-windows-x64.lock', 'native/windows-*/vcpkg.json') }}
@@ -128,7 +128,7 @@ jobs:
 
       - name: Save completed vcpkg packages before application build
         if: steps.vcpkg-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .cache/vcpkg-binaries
           key: ${{ steps.vcpkg-cache.outputs.cache-primary-key }}
@@ -158,10 +158,67 @@ jobs:
           } | Set-Content "$output/CanX-$env:VERSION-$env:RID-SHA256SUMS" -Encoding ascii
 
       - name: Upload Windows packages
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-win-${{ matrix.architecture }}
           path: artifacts/release/win-${{ matrix.architecture }}/*
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+
+  plugins:
+    needs: [metadata, tests]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      VERSION: ${{ needs.metadata.outputs.version }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          ref: ${{ needs.metadata.outputs.commit }}
+
+      - name: Install Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 24
+
+      - name: Test, lint and pack every plugin
+        run: |
+          set -euo pipefail
+          output="$(pwd)/artifacts/plugins"
+          mkdir -p "$output"
+          plugins=0
+          for project in plugins/*/ plugins/example/*/; do
+            [[ -f "$project/package.json" ]] || continue
+            (
+              cd "$project"
+              npm ci --ignore-scripts
+              # Mirrors the local gate in scripts/verify-plugin-platform-windows-x64.ps1:
+              # npm test builds dist/, lint checks the manifest against it, and pack:canx
+              # writes <workspace>/artifacts/<manifest-id>-<version>.canxplugin (the CLI
+              # treats --output as an exact file path, so collect the default outputs).
+              npm test
+              npm run lint
+              npm run pack:canx
+              mv "$PWD"/artifacts/*.canxplugin "$output/"
+            )
+            plugins=$((plugins + 1))
+          done
+          [[ "$plugins" -gt 0 ]] || { echo 'No plugin projects were found.' >&2; exit 1; }
+          packages=$(ls "$output"/*.canxplugin | wc -l)
+          [[ "$packages" -eq "$plugins" ]] || {
+            echo "packed $plugins plugins but collected $packages packages." >&2
+            exit 1
+          }
+          echo "packed plugins: $plugins"
+          (cd "$output" && sha256sum ./*.canxplugin > "CanX-$VERSION-plugins-SHA256SUMS")
+
+      - name: Upload plugin packages
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-plugins
+          path: artifacts/plugins/*
           if-no-files-found: error
           retention-days: 30
           compression-level: 0
@@ -198,7 +255,7 @@ jobs:
           python3 -m pip install --target .cache/python-tools meson==1.9.1
 
       - name: Cache pinned sources and native outputs
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             .cache/upstream
@@ -221,7 +278,7 @@ jobs:
           (cd "$output"; sha256sum ./*.apk ./*.tar.gz ./*.txt > "CanX-$VERSION-$RID-SHA256SUMS")
 
       - name: Upload Android packages
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-${{ matrix.rid }}
           path: artifacts/release/${{ matrix.rid }}/*
@@ -230,23 +287,41 @@ jobs:
           compression-level: 0
 
   macos:
-    if: vars.CANX_MACOS_CI_ENABLED == 'true'
     needs: [metadata, tests]
-    runs-on: [self-hosted, macOS, ARM64, canx-release]
-    timeout-minutes: 180
+    runs-on: macos-15
+    timeout-minutes: 360
     env:
       VERSION: ${{ needs.metadata.outputs.version }}
+      # Binaries must match the Info.plist LSMinimumSystemVersion (13.0)
+      # rather than the runner image's macOS version.
+      MACOSX_DEPLOYMENT_TARGET: '13.0'
     steps:
       - name: Check out source
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
         with:
           ref: ${{ needs.metadata.outputs.commit }}
-          clean: false
 
       - name: Set up .NET
-        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.4.0
         with:
           global-json-file: global.json
+
+      - name: Cache pinned sources and native build outputs
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            .cache/upstream
+            .cache/native/quickjs
+            .cache/mac-native
+            .cache/macos
+            .cache/macos-build-venv
+          key: macos-15-v1-${{ hashFiles('native/sources-linux-x64.lock', 'native/aria2-shim/**', 'native/quickjs-shim/**', 'native/patches/**', 'spikes/CanX.Spikes.QuickJsInterop/native-source.lock', 'scripts/build-macos-*', 'scripts/package-app-macos.sh') }}
+
+      - name: Install build tools and native runtime dependencies
+        run: |
+          set -euo pipefail
+          brew install autoconf automake libtool cmake ninja pkg-config \
+            openssl@3 sqlite libssh2 c-ares
 
       - name: Build and package macOS application
         run: |
@@ -261,7 +336,7 @@ jobs:
           (cd "$output"; shasum -a 256 ./*.zip ./*.tar.gz ./*.txt > "CanX-$VERSION-osx-arm64-SHA256SUMS")
 
       - name: Upload macOS packages
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-osx-arm64
           path: artifacts/release/osx-arm64/*
@@ -274,14 +349,14 @@ jobs:
     if: >-
       always() && !cancelled() && needs.metadata.result == 'success' &&
       needs.tests.result == 'success' && needs.metadata.outputs.tag != ''
-    needs: [metadata, tests, linux, windows, android, macos]
+    needs: [metadata, tests, linux, windows, android, macos, plugins]
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
       contents: write
     steps:
       - name: Download completed platform packages
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: release-*
           path: release-assets
@@ -300,6 +375,14 @@ jobs:
             echo 'No platform packages completed successfully.'
             exit 0
           fi
+          # Debug symbols stay available as Actions artifacts; the release page
+          # only carries distributable packages and their checksums. Checksum
+          # lines referencing symbols are dropped so `sha256sum -c` validates
+          # exactly the files listed on the release.
+          rm -f -- release-assets/*-symbols.tar.gz release-assets/*-symbols.zip
+          for checksums in release-assets/*SHA256SUMS; do
+            sed -i '/-symbols\./d' "$checksums"
+          done
           response="$(mktemp)"
           status="$(curl --silent --show-error --output "$response" --write-out '%{http_code}' \
             -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' \

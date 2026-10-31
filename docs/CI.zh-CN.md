@@ -25,23 +25,32 @@ Release 不会被自动创建。先推 tag、之后才创建 Release 也可以�
 
 | 平台 | Runner | 附件 |
 |---|---|---|
-| Linux x64 | Ubuntu 24.04 runner 内的 Ubuntu 22.04 容器 | 应用、符号、完整对应源码、校验文件；沿用现有 SBOM / 许可证打包与审计 |
-| Linux ARM64 | Ubuntu 24.04 ARM64 runner 内的原生 Ubuntu 22.04 ARM64 容器 | NativeAOT 应用、独立符号、完整对应源码与校验文件，同样执行 GLIBC 2.35 基线审计 |
+| Linux x64 | Ubuntu 24.04 runner 内的 Ubuntu 22.04 容器 | 应用、符号、校验文件；沿用现有 SBOM / 许可证打包与审计 |
+| Linux ARM64 | Ubuntu 24.04 ARM64 runner 内的原生 Ubuntu 22.04 ARM64 容器 | NativeAOT 应用、独立符号与校验文件，同样执行 GLIBC 2.35 基线审计 |
 | Windows x64 | Windows 2022 | NativeAOT 应用 ZIP、独立符号 ZIP、SHA-256 校验文件 |
 | Windows ARM64 | Windows 2022 x64 runner，MSVC ARM64 交叉工具链 | NativeAOT 应用 ZIP、独立符号 ZIP、SHA-256 校验文件，校验 PE 的 ARM64 Machine 字段 |
 | Android ARM64 / x64 | Ubuntu 24.04，两个 ABI 独立任务 | NativeAOT APK、独立符号归档、许可证、SHA-256 校验文件 |
-| macOS ARM64 | 显式启用的专用自托管 runner | `.app` ZIP、独立符号归档、许可证、SHA-256 校验文件 |
+| macOS ARM64 | GitHub 托管 macos-15 runner | `.app` ZIP、独立符号归档、许可证、SHA-256 校验文件 |
 
 每个平台的 Actions Artifact 名为 `release-<rid>`，保留 30 天；测试结果保留 14 天。
+插件包在 Ubuntu 24.04 单独构建（`release-plugins` Artifact，保留 30 天）：逐个执行插件的
+`npm test` / lint / `pack:canx`，产出 `org.canx.*-<版本>.canxplugin` 与 `CanX-<版本>-plugins-SHA256SUMS`，
+与 Release 附件使用同一份包；当前与本地 verify 一致，插件包不签名。
 附件名称包含版本与平台，校验文件也按平台命名，下载后可在同目录执行 `sha256sum -c <校验文件>`。
 macOS 可使用 `shasum -a 256 -c <校验文件>`。
+Release 附件不携带符号归档：符号与校验、二进制一起保留在 Actions Artifacts 中，
+汇总到 Release 时剔除 `*-symbols.*`，并从各平台校验文件移除对应行，保证 `sha256sum -c` 只校验 Release 实际包含的文件。
 Windows ZIP 自带主仓库 LICENSE / README；原生依赖完整发行合规材料仍应按对应平台的发布门槛审核。
 Windows 构建另行准备 x64 主机 Vulkan loader，供无显卡驱动的 runner 按导出符号执行依赖审计；
-不会跳过 `vulkan-1.dll` 检查，也不把这份主机 DLL 打入 ARM64 应用包。
+审计在 `vulkan-1.dll` 缺失系统级解析时以该 loader 替代库定位并逐符号校验，视为合规依赖（不跳过 `vulkan-1.dll` 检查），
+也不把这份主机 DLL 打入 ARM64 应用包。
 Windows 目标设备仍需 Vulkan loader 运行库，通常由显卡驱动提供；交叉审计不代替目标设备启动和播放验收。
 
 Windows、Linux、Android 均使用独立架构矩阵和 `fail-fast: false`；某个平台失败时，已完成平台的包仍可上传到已有 Release，
 但整个工作流仍会显示失败，不能把部分附件视为所有平台发布完成。重跑时同名附件会被替换，其他附件不变。
+原生依赖一律只构建 Release 配置：Linux / Android 显式 `--buildtype release` 或 `CMAKE_BUILD_TYPE=Release`，
+Windows vcpkg 通过 `native/windows-*/triplets` 下的 overlay triplet 设置 `VCPKG_BUILD_TYPE=release`，
+日志中不再出现 Debug 编译。
 
 Windows / Linux ARM64 各自产出 `release-win-arm64` / `release-linux-arm64`，不与 x64 合包。
 Linux ARM64 原生构建并运行托管测试，不使用 QEMU。Windows ARM64 在 x64 runner 上交叉编译，
@@ -50,22 +59,26 @@ ARM64 不强制链接 Intel QSV / oneVPL，也不启用这套 x64 发行配置�
 Linux 保留 VAAPI、Vulkan、OpenCL 和 V4L2 M2M 构建路径，Windows 保留 D3D 与 Vulkan 等通用路径，
 实际硬解仍取决于设备及驱动。Windows ARM64 使用与 Linux 同一锁定源码提交的 Lua 5.2.4，不使用 LuaJIT。
 
-## macOS 准备
+## macOS 构建
 
-当前 macOS 打包脚本不是干净主机的一键构建入口，也没有 NativeAOT 发布验收。
-因此默认跳过 macOS，而不是在 GitHub 托管 runner 上生成缺少原生依赖的应用包。
+macOS 与 Windows/Linux 一样使用 GitHub 托管 runner：`build.yml` 的 `macos` job
+在 `macos-15` 上直接运行 [打包脚本](../scripts/package-app-macos.sh)，没有
+启用开关或自托管 runner 依赖。
 
-启用前需要：
+1. libmpv 与全部播放运行时依赖由 [build-macos-mpv-frameworks.sh](../scripts/build-macos-mpv-frameworks.sh)
+   从 `native/sources-linux-x64.lock` 固定提交编译；QuickJS / aria2 shim 由
+   [build-macos-shims.sh](../scripts/build-macos-shims.sh) 构建。
+2. job 会 `brew install` 锁文件之外的宿主工具（autoconf、automake、libtool、
+   cmake、ninja、pkg-config）和 aria2 运行时动态库（openssl@3、sqlite、
+   libssh2、c-ares），这些 dylib 由打包脚本一并复制进 `.app/Contents/Frameworks`。
+3. 原生源码与构建产物按 `sources-linux-x64.lock`、shim 和脚本哈希进行
+   Actions Cache；首次全量原生构建包括 FFmpeg 与 mpv，耗时较长且接近托管
+   runner 上限，后续构建为增量。
 
-1. 注册专用 ARM64 macOS runner，标签包含 `self-hosted`、`macOS`、`ARM64`、`canx-release`。
-2. 按 [手动编译说明](../README.md#macos-arm64) 和 [打包脚本](../scripts/package-app-macos.sh)
-   准备 Xcode 命令行工具、IINA Frameworks、QuickJS / aria2 shim、libplacebo 及 Homebrew 依赖。
-   仓库本地的 `.cache` 输入需要位于 runner 实际检出的工作目录；脚本支持的外部输入可通过 runner 环境变量配置。
-3. 在仓库 Settings → Secrets and variables → Actions → Variables 中设置 `CANX_MACOS_CI_ENABLED=true`。
-
-该 runner 只由可信的 main / tag / Release / 手动发布流程调用，PR 测试不会使用它。
-checkout 保留未跟踪缓存以复用原生输入，因此必须使用专用、可信的工作目录，不要留有手动修改的源码。
 macOS 包沿用脚本的 ad-hoc 签名，不是 Developer ID 签名或 Apple 公证包。
+应用使用 `PublishAot=false` 的自包含发布，尚无 macOS NativeAOT 验收。
+macOS 不在测试矩阵中：播放 UI 测试的 headless 平台主要针对 Linux，
+Foundation 套件在 Windows 与 Linux 上运行。
 iOS 当前只有验证项目，没有完整应用发布入口，未加入发布矩阵。
 
 ## 权限与缓存
@@ -93,6 +106,8 @@ Android 沿用现有发布脚本的 SDK / workload / NDK 安装与签名行为�
 
 ## 工作流检查
 
-提交工作流修改前可在仓库根目录运行 `actionlint`。
-[actionlint 配置](../.github/actionlint.yaml) 声明了 macOS 的自定义 runner 标签。
-本地静态检查不能代替 GitHub 托管 runner 首次全量原生构建；磁盘空间、下载可用性、缓存命中和平台签名仍需在实际运行中确认。
+提交工作流修改前可在仓库根目录运行 `actionlint`。此前声明 macOS 自托管
+runner 标签的 `.github/actionlint.yaml` 已随自托管 runner 移除；全部
+runner 均为 GitHub 托管镜像，actionlint 不再需要自定义标签配置。
+本地静态检查不能代替完整平台首跑；磁盘空间、下载可用性、缓存命中和
+设备端验收（硬解、多显示器、休眠唤醒等）仍需在实际运行中确认。

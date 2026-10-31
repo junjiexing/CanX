@@ -252,6 +252,7 @@ function Install-Dependencies {
         'install',
         "--triplet=$Architecture-windows-static",
         '--host-triplet=x64-windows',
+        "--overlay-triplets=$(Join-Path $repositoryRoot "native\windows-$Architecture\triplets")",
         "--x-install-root=$installedRoot",
         "--x-manifest-root=$manifestDirectory",
         '--disable-metrics')

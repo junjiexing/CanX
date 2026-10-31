@@ -88,6 +88,7 @@ $nodeProjects = @(
     (Join-Path $repositoryRoot 'plugins\bangumi-anime'),
     (Join-Path $repositoryRoot 'plugins\anime-find'),
     (Join-Path $repositoryRoot 'plugins\subtitle-assrt'),
+    (Join-Path $repositoryRoot 'plugins\seekurl'),
     (Join-Path $repositoryRoot 'plugins\torrent-search-knaben'),
     (Join-Path $repositoryRoot 'plugins\torrent-search-apibay'),
     (Join-Path $repositoryRoot 'plugins\torrent-search-nyaa'),
