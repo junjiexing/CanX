@@ -3,7 +3,7 @@
 set -euo pipefail
 
 repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-static_root="${CANX_STATIC_ROOT:-$repository_root/.cache/static-native/linux-x64}"
+static_root="${CANX_STATIC_ROOT:-$repository_root/.cache/static-native-ubuntu22.04/linux-x64}"
 prefix_root="$static_root/prefix"
 aria_install="$prefix_root/aria2"
 aria_deps="$prefix_root/aria2-dependencies"
@@ -51,18 +51,20 @@ validate_sidecar() {
   fi
 }
 
+deps_source="$("$repository_root/scripts/fetch-deps-source.sh")"
+
 newer_shim_input=""
 newer_archive_input=""
 if [[ -f "$sidecar" ]]; then
   newer_shim_input="$(find \
-    "$repository_root/native/aria2-shim/CMakeLists.txt" \
-    "$repository_root/native/aria2-shim/include" \
-    "$repository_root/native/aria2-shim/src" \
+    "$deps_source/native/aria2-shim/CMakeLists.txt" \
+    "$deps_source/native/aria2-shim/include" \
+    "$deps_source/native/aria2-shim/src" \
     -type f -newer "$sidecar" -print -quit)"
   newer_archive_input="$(find "${archives[@]}" -type f -newer "$sidecar" -print -quit 2>/dev/null || true)"
 fi
 if [[ -f "$sidecar" && -z "$newer_shim_input" && -z "$newer_archive_input" && \
-      ! "$repository_root/native/sources-linux-x64.lock" -nt "$sidecar" ]]; then
+      ! "$repository_root/native-deps.lock" -nt "$sidecar" ]]; then
   validate_sidecar
   printf 'CANX_DEV_ARIA2_SIDECAR_OK platform=linux-x64 output=%s cached=true\n' "$sidecar"
   exit 0
@@ -70,9 +72,8 @@ fi
 
 for archive in "${archives[@]}"; do
   if [[ ! -f "$archive" ]]; then
-    echo "Building the pinned aria2 dependency closure for the development sidecar..."
-    CANX_STATIC_ROOT="$static_root" \
-      "$repository_root/scripts/build-static-native-linux-x64.sh" aria2
+    echo "Downloading the prebuilt aria2 dependency closure for the development sidecar..."
+    "$repository_root/scripts/fetch-native-deps.sh" linux
     break
   fi
 done
@@ -86,7 +87,7 @@ done
 
 dependencies=("${archives[@]:1}" m dl)
 dependency_list="$(IFS=';'; printf '%s' "${dependencies[*]}")"
-cmake -S "$repository_root/native/aria2-shim" -B "$output_dir" -G Ninja \
+cmake -S "$deps_source/native/aria2-shim" -B "$output_dir" -G Ninja \
   -DCMAKE_BUILD_TYPE=RelWithDebInfo \
   -DCANX_ARIA2_LIBRARY_TYPE=SHARED \
   -DCANX_ARIA2_EXTENDED_API=ON \

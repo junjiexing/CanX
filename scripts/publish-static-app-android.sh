@@ -68,9 +68,13 @@ symbols_dir="$repository_root/artifacts/symbols/$runtime-$output_suffix"
 project="$repository_root/src/CanX.App.Android/CanX.App.Android.csproj"
 project_directory="$(dirname "$project")"
 
-if [[ "$skip_native" != "--skip-native" ]]; then
-  ANDROID_NDK_ROOT="$android_ndk" \
-    "$repository_root/scripts/build-static-native-android.sh" "$abi" all
+if [[ ! -f "$native_lib/libmpv.a" ]]; then
+  if [[ "$skip_native" == "--skip-native" ]]; then
+    echo "prebuilt Android native dependencies are missing: $native_lib" >&2
+    echo "run scripts/fetch-native-deps.sh android $abi to download them" >&2
+    exit 2
+  fi
+  "$repository_root/scripts/fetch-native-deps.sh" android "$abi"
 fi
 
 join_by_pipe() {

@@ -21,6 +21,16 @@ Release 不会被自动创建。先推 tag、之后才创建 Release 也可以�
 草稿 Release 不触发 `published`，但可通过 tag 推送或手动构建为已有草稿补充附件。
 由其他工作流使用 `GITHUB_TOKEN` 创建的 tag / Release 通常不会再次触发工作流；这种情况下应手动运行构建。
 
+## 原生依赖（CanX.deps）
+
+所有 C/C++ 依赖（mpv、FFmpeg、Skia、aria2、QuickJS 及 shim）由
+[CanX.deps](https://github.com/junjiexing/CanX.deps) 仓库独立构建：其 CI 从固定源码编译
+各平台产物，`main` 分支发布滚动 Release `dev`，`v*` tag 发布不可变 Release。
+本仓库根目录 `native-deps.lock` 固定消费的 Release tag，`scripts/fetch-native-deps.sh` /
+`fetch-native-deps.ps1` 下载资产、按 Release 附带的 `SHA256SUMS` 校验并解压到发布脚本
+约定的缓存位置；发布脚本在依赖缺失时也会自动调用下载脚本。
+升级依赖时先在 CanX.deps 合入修改、待 CI 通过后发布新 tag，再更新本仓库的 pin。
+
 ## 平台与产物
 
 | 平台 | Runner | 附件 |
@@ -41,16 +51,16 @@ macOS 可使用 `shasum -a 256 -c <校验文件>`。
 Release 附件不携带符号归档：符号与校验、二进制一起保留在 Actions Artifacts 中，
 汇总到 Release 时剔除 `*-symbols.*`，并从各平台校验文件移除对应行，保证 `sha256sum -c` 只校验 Release 实际包含的文件。
 Windows ZIP 自带主仓库 LICENSE / README；原生依赖完整发行合规材料仍应按对应平台的发布门槛审核。
-Windows 构建另行准备 x64 主机 Vulkan loader，供无显卡驱动的 runner 按导出符号执行依赖审计；
+Windows 依赖包内含 x64 主机 Vulkan loader，供无显卡驱动的 runner 按导出符号执行依赖审计；
 审计在 `vulkan-1.dll` 缺失系统级解析时以该 loader 替代库定位并逐符号校验，视为合规依赖（不跳过 `vulkan-1.dll` 检查），
 也不把这份主机 DLL 打入 ARM64 应用包。
 Windows 目标设备仍需 Vulkan loader 运行库，通常由显卡驱动提供；交叉审计不代替目标设备启动和播放验收。
 
 Windows、Linux、Android 均使用独立架构矩阵和 `fail-fast: false`；某个平台失败时，已完成平台的包仍可上传到已有 Release，
 但整个工作流仍会显示失败，不能把部分附件视为所有平台发布完成。重跑时同名附件会被替换，其他附件不变。
-原生依赖一律只构建 Release 配置：Linux / Android 显式 `--buildtype release` 或 `CMAKE_BUILD_TYPE=Release`，
-Windows vcpkg 通过 `native/windows-*/triplets` 下的 overlay triplet 设置 `VCPKG_BUILD_TYPE=release`，
-日志中不再出现 Debug 编译。
+原生依赖一律只构建 Release 配置（在 CanX.deps 中）：Linux / Android 显式 `--buildtype release`
+或 `CMAKE_BUILD_TYPE=Release`，Windows vcpkg 通过 overlay triplet 设置
+`VCPKG_BUILD_TYPE=release`，日志中不再出现 Debug 编译。
 
 Windows / Linux ARM64 各自产出 `release-win-arm64` / `release-linux-arm64`，不与 x64 合包。
 Linux ARM64 原生构建并运行托管测试，不使用 QEMU。Windows ARM64 在 x64 runner 上交叉编译，
@@ -65,15 +75,12 @@ macOS 与 Windows/Linux 一样使用 GitHub 托管 runner：`build.yml` 的 `mac
 在 `macos-15` 上直接运行 [打包脚本](../scripts/package-app-macos.sh)，没有
 启用开关或自托管 runner 依赖。
 
-1. libmpv 与全部播放运行时依赖由 [build-macos-mpv-frameworks.sh](../scripts/build-macos-mpv-frameworks.sh)
-   从 `native/sources-linux-x64.lock` 固定提交编译；QuickJS / aria2 shim 由
-   [build-macos-shims.sh](../scripts/build-macos-shims.sh) 构建。
-2. job 会 `brew install` 锁文件之外的宿主工具（autoconf、automake、libtool、
-   cmake、ninja、pkg-config）和 aria2 运行时动态库（openssl@3、sqlite、
-   libssh2、c-ares），这些 dylib 由打包脚本一并复制进 `.app/Contents/Frameworks`。
-3. 原生源码与构建产物按 `sources-linux-x64.lock`、shim 和脚本哈希进行
-   Actions Cache；首次全量原生构建包括 FFmpeg 与 mpv，耗时较长且接近托管
-   runner 上限，后续构建为增量。
+1. libmpv、全部播放运行时依赖与 QuickJS / aria2 shim 由 CanX.deps 构建发布，
+   job 通过 `scripts/fetch-native-deps.sh macos` 下载解压到 `.cache/` 约定位置。
+2. job 会 `brew install` aria2 运行时动态库（openssl@3、sqlite、libssh2、c-ares），
+   这些 dylib 由打包脚本一并复制进 `.app/Contents/Frameworks`。
+3. 原生产物按 `native-deps.lock` 的 pin 下载，macOS 构建不再维护原生编译的
+   Actions Cache。
 
 macOS 包沿用脚本的 ad-hoc 签名，不是 Developer ID 签名或 Apple 公证包。
 应用使用 `PublishAot=false` 的自包含发布，尚无 macOS NativeAOT 验收。
@@ -88,9 +95,10 @@ iOS 当前只有验证项目，没有完整应用发布入口，未加入发布�
 上传前查询对应 Release：不存在时保留 Actions Artifacts，其他 API 错误则让任务失败。
 不会对 PR 使用 `pull_request_target`，也不会向 PR 任务提供发布凭据。
 
-原生依赖使用按平台、ABI、锁文件、补丁和构建脚本区分的 Actions Cache。
-第一次构建需要下载和编译大量依赖，可能接近托管 runner 的六小时上限；缓存容量不足会被 GitHub 淘汰。
-工具链或 runner 镜像重大变化后，应更新工作流中的缓存版本或删除缓存，避免复用不兼容的构建目录。
+原生依赖不再在本仓库编译：各平台 job 只下载 CanX.deps 的 Release 资产并按 `SHA256SUMS` 校验，
+本仓库不再维护数 GB 的原生构建缓存，也不再受托管 runner 六小时上限约束；
+Linux 仅保留 NuGet 包缓存。依赖自身的增量编译缓存由 CanX.deps 工作流维护，
+其工具链或 runner 镜像重大变化后应更新缓存版本或删除缓存。
 Linux 两种架构的发行基线均由 Ubuntu 22.04 容器和 GLIBC 版本审计保证。
 非 tag 的日常 CI 使用当前 Ubuntu 22.04 官方软件源，避免快照服务持续 502/503 阻塞所有构建；
 tag / Release 构建和本地默认入口仍选择固定快照，日常与快照构建缓存分开。

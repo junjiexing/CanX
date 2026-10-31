@@ -18,11 +18,8 @@ if [[ "${CANX_MACOS_SKIP_PUBLISH:-false}" != true ]]; then
     --property CanXProductionPublish=true \
     --output "$publish_dir"
 fi
-if [[ ! -f "$mpv_frameworks/libmpv.2.dylib" ]]; then
-  "$repository_root/scripts/build-macos-mpv-frameworks.sh"
-fi
-if [[ ! -f "$quickjs" || ! -f "$aria2" ]]; then
-  "$repository_root/scripts/build-macos-shims.sh"
+if [[ ! -f "$mpv_frameworks/libmpv.2.dylib" || ! -f "$quickjs" || ! -f "$aria2" ]]; then
+  "$repository_root/scripts/fetch-native-deps.sh" macos
 fi
 for required in "$publish_dir/CanX.App" "$quickjs" "$aria2" "$mpv_frameworks/libmpv.2.dylib"; do
   [[ -f "$required" ]] || { echo "missing macOS bundle input: $required" >&2; exit 1; }

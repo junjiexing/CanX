@@ -1,0 +1,6 @@
+# Prebuilt native dependency release consumed by scripts/fetch-native-deps.*.
+# The binaries are built and published by the CanX.deps repository CI
+# (https://github.com/junjiexing/CanX.deps). Bump `tag` after a new CanX.deps
+# release is published; keep `repository` pointing at that repository.
+repository=https://github.com/junjiexing/CanX.deps
+tag=dev

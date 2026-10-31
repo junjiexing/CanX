@@ -38,13 +38,9 @@ function Resolve-Dotnet {
 }
 
 if (-not $SkipNativeBuild) {
-    $arguments = @('-Component', 'QuickJs', '-CacheRoot', $CacheRoot, '-Jobs', $Jobs.ToString())
-    if (-not [string]::IsNullOrWhiteSpace($Proxy)) {
-        $arguments += @('-Proxy', $Proxy)
-    }
-    & (Join-Path $PSScriptRoot 'build-static-native-windows-x64.ps1') @arguments
+    & (Join-Path $PSScriptRoot 'fetch-native-deps.ps1') -Architecture x64 -CacheRoot $CacheRoot
     if ($LASTEXITCODE -ne 0) {
-        throw 'The static QuickJS build failed.'
+        throw 'The prebuilt native dependency download failed.'
     }
 }
 
