@@ -7,8 +7,8 @@ source "$repository_root/scripts/support/linux-architecture.sh"
 publish_directory="${CANX_APP_OUTPUT:-$repository_root/artifacts/publish/$linux_runtime}"
 symbols_source="${CANX_APP_SYMBOLS_OUTPUT:-$repository_root/artifacts/symbols/$linux_runtime}"
 release_root="${CANX_RELEASE_OUTPUT:-$repository_root/artifacts/release/$linux_runtime}"
-static_root="${CANX_STATIC_ROOT:-$repository_root/.cache/static-native/$linux_runtime}"
-quickjs_source_root="$repository_root/.cache/native/quickjs/source"
+static_root="${CANX_STATIC_ROOT:-$repository_root/.cache/static-native-ubuntu22.04/$linux_runtime}"
+metadata_root="$static_root/metadata"
 version="${CANX_VERSION:-}"
 
 while [[ $# -gt 0 ]]; do
@@ -48,6 +48,11 @@ fi
 for tool in git gzip python3 sha256sum tar; do
   command -v "$tool" >/dev/null 2>&1 || { echo "missing packaging tool: $tool" >&2; exit 2; }
 done
+[[ -f "$metadata_root/sources-linux-x64.lock" ]] || {
+  echo "dependency metadata is missing: $metadata_root" >&2
+  echo 'run scripts/fetch-native-deps.sh linux to download the prebuilt dependency package' >&2
+  exit 2
+}
 
 mkdir -p "$release_root"
 package_name="CanX-$version-$linux_runtime"
@@ -73,10 +78,10 @@ python3 "$repository_root/scripts/generate-release-metadata.py" \
   --output-directory "$package_directory" \
   --rid "$linux_runtime" \
   --version "$version" \
-  --native-lock "$repository_root/native/sources-linux-x64.lock" \
-  --static-source-root "$static_root/sources" \
-  --quickjs-lock "$repository_root/spikes/CanX.Spikes.QuickJsInterop/native-source.lock" \
-  --quickjs-source-root "$quickjs_source_root" \
+  --native-lock "$metadata_root/sources-linux-x64.lock" \
+  --static-source-root "$metadata_root/sources" \
+  --quickjs-lock "$metadata_root/quickjs-source.lock" \
+  --quickjs-source-root "$metadata_root/sources-quickjs" \
   --assets-file "$repository_root/src/CanX.App/obj/project.assets.json"
 
 find "$symbols_source" -maxdepth 1 -type f \( -name '*.dbg' -o -name '*.pdb' \) -exec cp -t "$symbols_directory" -- {} +

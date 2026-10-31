@@ -1,8 +1,0 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
-# Host triplet on the Windows ARM64 cross build (pkgconf tools and the host
-# x64 Vulkan loader used by the dependency audit). Only Release output is
-# needed; mirrors the builtin x64-windows settings.
-set(VCPKG_TARGET_ARCHITECTURE x64)
-set(VCPKG_CRT_LINKAGE dynamic)
-set(VCPKG_LIBRARY_LINKAGE dynamic)
-set(VCPKG_BUILD_TYPE release)

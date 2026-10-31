@@ -25,7 +25,7 @@ fi
 "$container_engine" build \
   --platform "linux/$docker_architecture" \
   --build-arg "UBUNTU_SNAPSHOT=$snapshot" \
-  --file "$repository_root/native/linux-x64-ubuntu22.04.Dockerfile" \
+  --file "$repository_root/scripts/support/linux-x64-ubuntu22.04.Dockerfile" \
   --tag "$image" "$repository_root"
 
 if [[ $# -eq 0 ]]; then
