@@ -75,6 +75,7 @@ fi
 }
 if [[ ! -f "$quickjs_root/source/VERSION" ]] || [[ "$(<"$quickjs_root/source/VERSION")" != "$version" ]]; then
   rm -rf "$quickjs_root/source"
+  mkdir -p "$quickjs_root/source"
   tar -xJf "$archive" -C "$quickjs_root/source" --strip-components=1
 fi
 
