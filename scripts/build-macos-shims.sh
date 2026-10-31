@@ -136,7 +136,7 @@ if [[ ! -f "$aria2_prefix/lib/libaria2.a" ]]; then
         --prefix="$aria2_prefix" \
         --enable-libaria2 --disable-aria2c \
         --enable-static --disable-shared \
-        --disable-nls --without-libuv --without-gnutls \
+        --disable-nls --without-libuv --without-gnutls --without-libgmp \
         --with-openssl --without-libxml2 --with-libexpat \
         --with-sqlite3 --with-libcares --with-libssh2 --with-libz
     make -j "$jobs"
