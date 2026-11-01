@@ -46,14 +46,14 @@ jobs:
           sudo rm -rf /usr/local/lib/android /opt/ghc /usr/local/.ghcup
           df -h .
 
-      - name: Cache pinned native source and build outputs
+      - name: Cache NuGet packages
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: |
-            .cache/static-native-ubuntu22.04
-            .cache/native/quickjs
-            .cache/nuget
-          key: linux-${{ inputs.architecture }}-jammy-${{ inputs.snapshot || 'current' }}-v4-${{ hashFiles('native/sources-linux-x64.lock', 'native/aria2-shim/**', 'native/quickjs-shim/**', 'native/patches/**', 'native/linux-x64-ubuntu22.04.Dockerfile', 'spikes/CanX.Spikes.QuickJsInterop/native-source.lock', 'scripts/*linux-x64.sh', 'scripts/support/linux-architecture.sh', 'scripts/prepare-quickjs-spike.sh') }}
+          path: .cache/nuget
+          key: linux-${{ inputs.architecture }}-nuget-v1-${{ hashFiles('**/*.csproj', 'Directory.Packages.props', 'global.json') }}
+
+      - name: Download prebuilt native dependencies
+        run: scripts/fetch-native-deps.sh linux
 
       - name: Build, audit and package in Ubuntu 22.04
         shell: bash
@@ -63,7 +63,7 @@ jobs:
           [[ "$CANX_CI_VERSION" =~ ^[0-9A-Za-z][0-9A-Za-z._+-]*$ ]]
           scripts/run-ubuntu-22.04-linux-x64.sh bash -lc '
             set -euo pipefail
-            scripts/publish-static-app-linux-x64.sh
+            scripts/publish-static-app-linux-x64.sh --skip-build
             scripts/package-release-linux-x64.sh --version "$1"
           ' bash "$CANX_CI_VERSION"
 

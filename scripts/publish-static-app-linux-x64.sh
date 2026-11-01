@@ -3,7 +3,7 @@ set -euo pipefail
 
 repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$repository_root/scripts/support/linux-architecture.sh"
-static_root="${CANX_STATIC_ROOT:-$repository_root/.cache/static-native/$linux_runtime}"
+static_root="${CANX_STATIC_ROOT:-$repository_root/.cache/static-native-ubuntu22.04/$linux_runtime}"
 prefix_root="$static_root/prefix"
 include_smoke_tests="${CANX_INCLUDE_SMOKE_TESTS:-false}"
 case "$include_smoke_tests" in
@@ -28,10 +28,13 @@ elif [[ $# -ne 0 ]]; then
   exit 2
 fi
 
-if [[ "$skip_build" == false ]]; then
-  CANX_STATIC_ROOT="$static_root" "$repository_root/scripts/build-static-native-linux-x64.sh" aria2
-  CANX_STATIC_ROOT="$static_root" "$repository_root/scripts/build-static-native-linux-x64.sh" mpv
-  CANX_STATIC_ROOT="$static_root" "$repository_root/scripts/build-static-native-linux-x64.sh" avalonia
+if [[ ! -f "$prefix_root/mpv/lib/libmpv.a" ]]; then
+  if [[ "$skip_build" == true ]]; then
+    echo "prebuilt native dependencies are missing: $prefix_root" >&2
+    echo 'run scripts/fetch-native-deps.sh linux to download them' >&2
+    exit 2
+  fi
+  "$repository_root/scripts/fetch-native-deps.sh" linux
 fi
 
 join_by_pipe() {
@@ -50,7 +53,7 @@ gcc_archive() {
   printf '%s' "$archive"
 }
 
-for tool in cmake dotnet gcc readelf; do
+for tool in dotnet gcc readelf; do
   command -v "$tool" >/dev/null 2>&1 || {
     echo "missing build tool: $tool" >&2
     exit 2
@@ -62,15 +65,12 @@ aria_install="$prefix_root/aria2"
 avalonia_native="$prefix_root/avalonia/lib"
 mpv_deps="$prefix_root/mpv-dependencies/lib"
 mpv_install="$prefix_root/mpv/lib"
-aria_shim="$repository_root/artifacts/native/aria2-shim-app-static"
-quickjs_shim="$(CANX_QUICKJS_LIBRARY_TYPE=STATIC "$repository_root/scripts/prepare-quickjs-spike.sh" | tail -n 1)"
-cmake -S "$repository_root/native/aria2-shim" -B "$aria_shim" -G Ninja \
-  -DCMAKE_BUILD_TYPE=Release \
-  -DCANX_ARIA2_LIBRARY_TYPE=STATIC \
-  -DCANX_ARIA2_EXTENDED_API=ON \
-  -DARIA2_INCLUDE_DIR="$aria_install/include" \
-  -DARIA2_LIBRARY="$aria_install/lib/libaria2.a"
-cmake --build "$aria_shim"
+shims="$static_root/shims"
+[[ -f "$shims/libcanx_aria2.a" && -f "$shims/libcanx_quickjs.a" ]] || {
+  echo "prebuilt shim archives are missing: $shims" >&2
+  echo 'run scripts/fetch-native-deps.sh linux to download them' >&2
+  exit 2
+}
 
 libstdcpp="$(gcc_archive libstdc++.a)"
 libgcc_eh="$(gcc_archive libgcc_eh.a)"
@@ -80,8 +80,8 @@ link_group_end='-Wl%2C--end-group'
 hide_archive_symbols='-Wl%2C--exclude-libs%2CALL'
 libraries=(
   "$link_group_start"
-  "$aria_shim/libcanx_aria2.a"
-  "$quickjs_shim/libcanx_quickjs.a"
+  "$shims/libcanx_aria2.a"
+  "$shims/libcanx_quickjs.a"
   "$aria_install/lib/libaria2.a"
   "$aria_deps/libssh2.a"
   "$aria_deps/libcares.a"

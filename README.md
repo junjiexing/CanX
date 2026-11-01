@@ -30,11 +30,18 @@ SBOM、第三方许可证 bundle 与 Ubuntu 22.04 CI 已落地；正式 glibc 2.
 
 以下命令均在仓库根目录执行。桌面构建需要 `global.json` 指定的 .NET SDK 10.0.400，
 也可使用同一 feature band 的更新补丁版本，例如 10.0.401。首次构建需要联网下载 NuGet 包和
-锁定版本的原生源码，并预留足够的磁盘空间与编译时间。
+预编译原生依赖。
+
+原生依赖（mpv、FFmpeg、Skia、aria2、QuickJS 等）不再随本仓库构建：它们由
+[CanX.deps](https://github.com/junjiexing/CanX.deps) 仓库的 CI 按固定源码编译并发布为
+Release 资产。本仓库根目录的 `native-deps.lock` 固定要消费的 CanX.deps Release tag，
+`scripts/fetch-native-deps.sh`（Windows 为 `fetch-native-deps.ps1`）下载、校验并解压到
+各平台发布脚本约定的缓存位置；发布脚本在依赖缺失时会自动调用下载脚本，正常开发无需
+手动执行。需要升级依赖时，在 CanX.deps 发布新 Release 后更新 `native-deps.lock` 的 tag。
 
 正式发布优先使用下列脚本，而不是只执行 `dotnet publish`：脚本负责原生依赖链接、
-产物审计和调试符号分离。跳过原生构建的参数只适用于对应平台、ABI 的缓存已完整生成，
-且原生源码、补丁、构建配置及工具链未发生变化的情况。
+产物审计和调试符号分离。跳过依赖下载的参数（如 `-SkipNativeBuild` / `--skip-native` /
+`--skip-build`）只适用于对应平台、ABI 的预编译依赖缓存已按当前 pin 就位的情况。
 
 | 目标 | 构建主机 | 当前发布方式 |
 |---|---|---|
@@ -54,28 +61,21 @@ SBOM、第三方许可证 bundle 与 Ubuntu 22.04 CI 已落地；正式 glibc 2.
 
 - .NET SDK、Git 和 Visual Studio 2022。
 - Visual Studio 的“使用 C++ 的桌面开发”、Windows SDK、CMake，以及 LLVM/Clang 组件。
-- MSYS2，用于 aria2 的 Autotools/Make；默认检测 `C:\msys64`、`E:\msys64`、`D:\msys64`。
 
 建议在 Visual Studio 的 Developer PowerShell 中执行：
 
 ```powershell
-# 首次：构建全部原生依赖并发布
+# 首次：自动下载预编译原生依赖并发布
 .\scripts\publish-static-app-windows-x64.ps1
 
-# 后续：复用 .cache\windows-msvc 下的原生库
-.\scripts\publish-static-app-windows-x64.ps1 -SkipNativeBuild
-```
-
-若 MSYS2 位于其他目录，先单独构建原生库，再发布：
-
-```powershell
-.\scripts\build-static-native-windows-x64.ps1 -Msys2Root 'F:\msys64'
+# 也可以显式下载依赖（与发布脚本共用同一缓存）
+.\scripts\fetch-native-deps.ps1
 .\scripts\publish-static-app-windows-x64.ps1 -SkipNativeBuild
 ```
 
 正式产物为 `artifacts/publish/win-x64/CanX.App.exe`，不需要安装 .NET 运行时。
 PDB 单独输出到 `artifacts/symbols/win-x64/`。脚本会执行 PE 原生依赖审计；看到
-`CANX_WINDOWS_STATIC_APP_OK` 表示发布完成。使用自定义缓存时，构建和发布均需传入相同的
+`CANX_WINDOWS_STATIC_APP_OK` 表示发布完成。使用自定义缓存时，下载和发布均需传入相同的
 `-CacheRoot`。
 
 需要构建并运行 shell smoke 验证版时使用：
@@ -98,39 +98,41 @@ PDB 单独输出到 `artifacts/symbols/win-x64/`。脚本会执行 PE 原生依�
 
 默认缓存独立放在 `.cache/windows-msvc-arm64/`，应用和符号分别在
 `artifacts/publish/win-arm64/`、`artifacts/symbols/win-arm64/`。x64 缓存不能用于 ARM64。
-原生依赖使用 `arm64-windows-static`，Meson / aria2 / CMake 和 NativeAOT 均使用 ARM64 目标；
+原生依赖使用 `arm64-windows-static` 预编译产物，NativeAOT 使用 ARM64 目标；
 产物会核验 PE 架构。交叉编译不代表已在 ARM64 设备完成 smoke 或播放验收。
 
 ### Linux x64
 
 #### 本机开发
 
-普通托管构建会自动从固定源码生成开发用 `libcanx_aria2.so` 和 `libmpv.so`，并复制到应用输出目录：
+普通托管构建会自动生成开发用 `libcanx_aria2.so` 和 `libmpv.so`，并复制到应用输出目录：
 
 ```bash
 dotnet build src/CanX.App/CanX.App.csproj -c Release
 dotnet src/CanX.App/bin/Release/net10.0/linux-x64/CanX.App.dll
 ```
 
-也可以直接使用 `dotnet run --project src/CanX.App/CanX.App.csproj -c Release`。首次构建需要生成固定版本的 aria2、mpv 及其原生依赖，后续构建为增量构建。开发 sidecar 内部静态包含两套引擎及其可控依赖；正式发行仍由 `scripts/publish-static-app-linux-x64.sh` 将相同 archive 直接合入 NativeAOT 可执行文件，不携带这些 sidecar。
+也可以直接使用 `dotnet run --project src/CanX.App/CanX.App.csproj -c Release`。首次构建会
+下载预编译依赖静态库并链接 sidecar，后续构建为增量构建。开发 sidecar 内部静态包含两套
+引擎及其可控依赖；正式发行仍由 `scripts/publish-static-app-linux-x64.sh` 将相同 archive
+直接合入 NativeAOT 可执行文件，不携带这些 sidecar。
 
 #### NativeAOT 发布
 
-正式发行需要 Linux x64 环境中的 Docker 或 Podman。容器会准备固定工具链和构建依赖，
-以 Ubuntu 22.04 / glibc 2.35 为最低基线；Windows 用户可在 WSL2 中运行并确保容器引擎可用：
+正式发行需要 Linux x64 环境中的 Docker 或 Podman。容器以 Ubuntu 22.04 / glibc 2.35 为
+最低基线；Windows 用户可在 WSL2 中运行并确保容器引擎可用：
 
 ```bash
-# 首次：构建容器、原生依赖和 NativeAOT 主程序
-scripts/run-ubuntu-22.04-linux-x64.sh
+# 下载预编译原生依赖（x64/arm64 按本机架构选择）
+scripts/fetch-native-deps.sh linux
 
-# 后续：复用同一容器环境生成的原生缓存
-scripts/run-ubuntu-22.04-linux-x64.sh \
-	scripts/publish-static-app-linux-x64.sh --skip-build
+# 构建容器并在其中链接、审计 NativeAOT 主程序
+scripts/run-ubuntu-22.04-linux-x64.sh
 ```
 
 程序输出到 `artifacts/publish/linux-x64/CanX.App`，符号位于
 `artifacts/symbols/linux-x64/`。开发机上也可直接运行
-`scripts/publish-static-app-linux-x64.sh`，但需要自行安装原生构建依赖，且较新的 glibc
+`scripts/publish-static-app-linux-x64.sh`，但较新的 glibc
 可能使产物无法在 Ubuntu 22.04 运行，不能代替正式基线验收。
 
 在正式构建环境中生成并校验带许可证、SBOM、符号和对应源码的发布候选：
@@ -161,13 +163,8 @@ FFmpeg/libmpv 构建不依赖本机 GPU 厂商，同时包含 NVIDIA NVDEC/CUDA�
 
 ### Android ARM64 / x64
 
-使用 Linux 或 macOS 的 Bash 环境。首次需要 Git、curl、Python 3/pip、CMake、Ninja、Make、
-Perl、pkg-config、Autotools（包括 autoreconf）及 tar/xz 等工具。先准备锁定源码和 Meson：
-
-```bash
-scripts/prepare-android-sources.sh
-python3 -m pip install --target .cache/python-tools meson==1.9.1
-```
+使用 Linux 或 macOS 的 Bash 环境。原生依赖为预编译产物，发布脚本会按 ABI 自动下载
+（也可先手动执行 `scripts/fetch-native-deps.sh android <abi>`）。
 
 发布脚本会通过 `prepare-android-workload.sh` 自动准备仓库本地的 .NET SDK、Android workload、
 Android SDK、JDK 和 NDK；准备过程会接受 Android SDK 许可证。按所需 ABI 执行：
@@ -203,24 +200,19 @@ ARM64 真机与 x64 模拟器的验证边界见 [Android 实现与验证](docs/S
 ### macOS ARM64
 
 macOS 构建不再复用任何外部应用的预编译库：libmpv 与全部运行时依赖
-（FFmpeg、libplacebo、libass、harfbuzz、freetype、fribidi、lcms2 等）都由
-[build-macos-mpv-frameworks.sh](scripts/build-macos-mpv-frameworks.sh)
-从 `native/sources-linux-x64.lock` 固定的提交编译为动态库，QuickJS / aria2 shim
-由 [build-macos-shims.sh](scripts/build-macos-shims.sh) 构建。锁文件之外的
-宿主工具（git / cmake / ninja / pkg-config / venv meson / autoconf 等）与
-aria2 的运行时依赖（Homebrew openssl@3、SQLite、libssh2、c-ares）可通过
-Homebrew 或 runner 镜像提供：
+（FFmpeg、libplacebo、libass、harfbuzz、freetype、fribidi、lcms2 等）以及
+QuickJS / aria2 shim 由 CanX.deps 仓库从固定源码编译为动态库并发布；本仓库通过
+`scripts/fetch-native-deps.sh macos` 下载。aria2 的运行时依赖
+（Homebrew openssl@3、SQLite、libssh2、c-ares）仍由 Homebrew 提供：
 
 ```bash
-brew install autoconf automake libtool cmake ninja pkg-config \
-  openssl@3 sqlite libssh2 c-ares
+brew install openssl@3 sqlite libssh2 c-ares
 CANX_DOTNET="$(command -v dotnet)" scripts/package-app-macos.sh
 ```
 
-[打包脚本](scripts/package-app-macos.sh) 会按需调用上述原生构建脚本，把
+[打包脚本](scripts/package-app-macos.sh) 会在依赖缺失时自动下载，把
 `libmpv.2.dylib` 及其依赖 `@rpath` 引用复制进 `.app/Contents/Frameworks`，
-并生成自包含 `.app` 与 ad-hoc 签名。首次原生编译接近一小时以上，可多跑几次
-增量复用 `.cache/macos` 与 `.cache/upstream` 产物。应用输出到
+并生成自包含 `.app` 与 ad-hoc 签名。应用输出到
 `artifacts/macos/CanX.app`，PDB 单独放在 `artifacts/symbols/osx-arm64/`。
 它不是 NativeAOT 发布：`publish-static-app-*` 还没有 macOS NativeAOT 验收，
 不能仅把 `PublishAot` 改为 `true` 就认为完成了 macOS 发布。

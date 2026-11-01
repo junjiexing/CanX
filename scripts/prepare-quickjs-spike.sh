@@ -16,6 +16,7 @@ case "$library_type" in
     ;;
 esac
 build_dir="$repository_root/artifacts/native/$build_name"
+deps_source="$("$repository_root/scripts/fetch-deps-source.sh")"
 
 source "$lock_file"
 mkdir -p "$cache_dir" "$source_dir" "$build_dir"
@@ -29,7 +30,7 @@ if [[ ! -f "$source_dir/VERSION" ]] || [[ "$(<"$source_dir/VERSION")" != "$versi
   tar -xJf "$archive" -C "$source_dir" --strip-components=1
 fi
 
-cmake -S "$repository_root/native/quickjs-shim" -B "$build_dir" -G Ninja \
+cmake -S "$deps_source/native/quickjs-shim" -B "$build_dir" -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
   -DCANX_QUICKJS_LIBRARY_TYPE="$library_type" \
   -DQUICKJS_SOURCE_DIR="$source_dir"

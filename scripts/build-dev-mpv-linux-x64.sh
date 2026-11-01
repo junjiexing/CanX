@@ -3,7 +3,7 @@
 set -euo pipefail
 
 repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-static_root="${CANX_STATIC_ROOT:-$repository_root/.cache/static-native/linux-x64}"
+static_root="${CANX_STATIC_ROOT:-$repository_root/.cache/static-native-ubuntu22.04/linux-x64}"
 prefix_root="$static_root/prefix"
 mpv_install="$prefix_root/mpv/lib"
 mpv_deps="$prefix_root/mpv-dependencies/lib"
@@ -109,7 +109,7 @@ if [[ -f "$sidecar" ]]; then
   done
 fi
 if [[ -f "$sidecar" && -z "$newer_archive" && ! "$0" -nt "$sidecar" && \
-      ! "$repository_root/native/sources-linux-x64.lock" -nt "$sidecar" ]]; then
+      ! "$repository_root/native-deps.lock" -nt "$sidecar" ]]; then
   validate_sidecar
   printf 'CANX_DEV_MPV_SIDECAR_OK platform=linux-x64 output=%s cached=true\n' "$sidecar"
   exit 0
@@ -117,9 +117,8 @@ fi
 
 for archive in "${archives[@]}"; do
   if [[ ! -f "$archive" ]]; then
-    echo "Building the pinned mpv dependency closure for the development sidecar..."
-    CANX_STATIC_ROOT="$static_root" \
-      "$repository_root/scripts/build-static-native-linux-x64.sh" mpv
+    echo "Downloading the prebuilt mpv dependency closure for the development sidecar..."
+    "$repository_root/scripts/fetch-native-deps.sh" linux
     break
   fi
 done

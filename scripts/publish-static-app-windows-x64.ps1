@@ -77,19 +77,13 @@ function Resolve-Dotnet {
     throw '.NET SDK was not found.'
 }
 
-if (-not $SkipNativeBuild) {
-    $buildArguments = @{
-        Architecture = $Architecture
-        Component = 'All'
-        CacheRoot = $CacheRoot
-        Jobs = $Jobs
+if (-not (Test-Path -LiteralPath (Join-Path $CacheRoot 'prefix\mpv\lib\libmpv.a'))) {
+    if ($SkipNativeBuild) {
+        throw "Prebuilt native dependencies are missing: $CacheRoot. Run scripts/fetch-native-deps.ps1 -Architecture $Architecture first."
     }
-    if (-not [string]::IsNullOrWhiteSpace($Proxy)) {
-        $buildArguments.Proxy = $Proxy
-    }
-    & (Join-Path $PSScriptRoot 'build-static-native-windows-x64.ps1') @buildArguments
+    & (Join-Path $PSScriptRoot 'fetch-native-deps.ps1') -Architecture $Architecture -CacheRoot $CacheRoot
     if ($LASTEXITCODE -ne 0) {
-        throw 'The Windows native dependency build failed.'
+        throw 'The prebuilt native dependency download failed.'
     }
 }
 
@@ -185,7 +179,7 @@ $systemLibraries = @(
 
 $missing = @($libraries | Where-Object { -not (Test-Path -LiteralPath $_) })
 if ($missing.Count -ne 0) {
-    throw "Static native libraries are missing. Run scripts/build-static-native-windows-x64.ps1 first:`n$($missing -join "`n")"
+    throw "Static native libraries are missing. Run scripts/fetch-native-deps.ps1 -Architecture $Architecture first:`n$($missing -join "`n")"
 }
 
 $dotnet = Resolve-Dotnet

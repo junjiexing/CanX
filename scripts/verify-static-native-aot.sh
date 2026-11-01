@@ -2,7 +2,7 @@
 set -euo pipefail
 
 repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-static_root="${CANX_STATIC_ROOT:-$repository_root/.cache/static-native/linux-x64}"
+static_root="${CANX_STATIC_ROOT:-$repository_root/.cache/static-native-ubuntu22.04/linux-x64}"
 prefix_root="$static_root/prefix"
 output_root="$repository_root/artifacts/spikes/static-native-aot"
 skip_build=false
@@ -15,8 +15,9 @@ elif [[ $# -ne 0 ]]; then
 fi
 
 if [[ "$skip_build" == false ]]; then
-  "$repository_root/scripts/build-static-native-linux-x64.sh" all
+  "$repository_root/scripts/fetch-native-deps.sh" linux
 fi
+deps_source="$("$repository_root/scripts/fetch-deps-source.sh")"
 
 for tool in cmake dotnet ffmpeg readelf curl python3; do
   command -v "$tool" >/dev/null 2>&1 || {
@@ -68,7 +69,7 @@ mkdir -p "$output_root"
 aria_deps="$prefix_root/aria2-dependencies/lib"
 aria_install="$prefix_root/aria2"
 aria_shim="$repository_root/artifacts/native/aria2-shim-static-source"
-cmake -S "$repository_root/native/aria2-shim" -B "$aria_shim" -G Ninja \
+cmake -S "$deps_source/native/aria2-shim" -B "$aria_shim" -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
   -DCANX_ARIA2_LIBRARY_TYPE=STATIC \
   -DCANX_ARIA2_EXTENDED_API=ON \

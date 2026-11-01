@@ -87,7 +87,6 @@ jobs:
       ARCHITECTURE: ${{ matrix.architecture }}
       RID: win-${{ matrix.architecture }}
       NATIVE_CACHE: .cache/windows-msvc-${{ matrix.architecture }}
-      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/.cache/vcpkg-binaries
     steps:
       - name: Check out source
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
@@ -99,39 +98,9 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Cache native dependencies and build outputs
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ${{ env.NATIVE_CACHE }}
-          key: windows-2022-${{ matrix.architecture }}-v2-${{ hashFiles('native/sources-windows-x64.lock', 'native/aria2-shim/**', 'native/quickjs-shim/**', 'native/patches/**', 'native/windows-*/**', 'spikes/CanX.Spikes.QuickJsInterop/native-source.lock', 'scripts/build-static-native-windows-x64.ps1', 'scripts/support/**') }}
-
-      - name: Install MSYS2 Autotools frontend
+      - name: Download prebuilt native dependencies
         shell: pwsh
-        run: |
-          & C:/msys64/usr/bin/bash.exe -lc 'pacman -Sy --noconfirm --needed autoconf automake gettext-devel libtool make pkgconf diffutils patch'
-          if ($LASTEXITCODE -ne 0) { throw 'MSYS2 build tools could not be installed.' }
-
-      - name: Restore vcpkg binary packages
-        id: vcpkg-cache
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: .cache/vcpkg-binaries
-          key: vcpkg-windows-2022-${{ matrix.architecture }}-${{ hashFiles('native/sources-windows-x64.lock', 'native/windows-*/vcpkg.json') }}
-          restore-keys: |
-            vcpkg-windows-2022-${{ matrix.architecture }}-
-
-      - name: Build pinned vcpkg dependencies
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force $env:VCPKG_DEFAULT_BINARY_CACHE | Out-Null
-          ./scripts/build-static-native-windows-x64.ps1 -Component Dependencies -Architecture $env:ARCHITECTURE -CacheRoot $env:NATIVE_CACHE -Jobs 2
-
-      - name: Save completed vcpkg packages before application build
-        if: steps.vcpkg-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: .cache/vcpkg-binaries
-          key: ${{ steps.vcpkg-cache.outputs.cache-primary-key }}
+        run: ./scripts/fetch-native-deps.ps1 -Architecture $env:ARCHITECTURE -CacheRoot $env:NATIVE_CACHE
 
       - name: Build and audit NativeAOT application
         shell: pwsh
@@ -143,7 +112,7 @@ jobs:
           $target = if ($env:ARCHITECTURE -eq 'arm64') { 'arm64' } else { 'amd64' }
           & "$installation\Common7\Tools\Launch-VsDevShell.ps1" -Arch $target -HostArch amd64 -SkipAutomaticLocation
           $env:IlcUseEnvironmentalTools = 'true'
-          ./scripts/publish-static-app-windows-x64.ps1 -Architecture $env:ARCHITECTURE -CacheRoot $env:NATIVE_CACHE -Jobs 2
+          ./scripts/publish-static-app-windows-x64.ps1 -Architecture $env:ARCHITECTURE -CacheRoot $env:NATIVE_CACHE -Jobs 2 -SkipNativeBuild
 
       - name: Package application and symbols
         shell: pwsh
@@ -246,27 +215,16 @@ jobs:
         with:
           ref: ${{ needs.metadata.outputs.commit }}
 
-      - name: Install build tools
+      - name: Free hosted runner space
         run: |
           sudo rm -rf /usr/local/lib/android /opt/ghc /usr/local/.ghcup
           df -h .
-          sudo apt-get update
-          sudo apt-get install -y autoconf automake autopoint gettext build-essential cmake gperf libtool ninja-build pkg-config python3-pip nasm unzip zip
-          python3 -m pip install --target .cache/python-tools meson==1.9.1
 
-      - name: Cache pinned sources and native outputs
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            .cache/upstream
-            .cache/native/quickjs
-            .cache/android-native/${{ matrix.abi }}
-          key: android-${{ matrix.abi }}-v1-${{ hashFiles('native/sources-linux-x64.lock', 'native/aria2-shim/**', 'native/quickjs-shim/**', 'native/patches/**', 'spikes/CanX.Spikes.QuickJsInterop/native-source.lock', 'scripts/*android*') }}
+      - name: Download prebuilt native dependencies
+        run: scripts/fetch-native-deps.sh android "$ABI"
 
       - name: Build and audit NativeAOT APK
-        run: |
-          scripts/prepare-android-sources.sh
-          scripts/publish-static-app-android.sh "$ABI"
+        run: scripts/publish-static-app-android.sh "$ABI" --skip-native
 
       - name: Package APK and symbols
         run: |
@@ -306,22 +264,11 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Cache pinned sources and native build outputs
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            .cache/upstream
-            .cache/native/quickjs
-            .cache/mac-native
-            .cache/macos
-            .cache/macos-build-venv
-          key: macos-15-v1-${{ hashFiles('native/sources-linux-x64.lock', 'native/aria2-shim/**', 'native/quickjs-shim/**', 'native/patches/**', 'spikes/CanX.Spikes.QuickJsInterop/native-source.lock', 'scripts/build-macos-*', 'scripts/package-app-macos.sh') }}
+      - name: Download prebuilt native dependencies
+        run: scripts/fetch-native-deps.sh macos
 
-      - name: Install build tools and native runtime dependencies
-        run: |
-          set -euo pipefail
-          brew install autoconf automake libtool cmake ninja pkg-config \
-            openssl@3 sqlite libssh2 c-ares
+      - name: Install native runtime dependencies
+        run: brew install openssl@3 sqlite libssh2 c-ares
 
       - name: Build and package macOS application
         run: |
