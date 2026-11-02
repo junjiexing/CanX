@@ -317,11 +317,6 @@ jobs:
         run: |
           set -euo pipefail
           shopt -s nullglob
-          assets=(release-assets/*)
-          if (( ${#assets[@]} == 0 )); then
-            echo 'No platform packages completed successfully.'
-            exit 0
-          fi
           # Debug symbols stay available as Actions artifacts; the release page
           # only carries distributable packages and their checksums. Checksum
           # lines referencing symbols are dropped so `sha256sum -c` validates
@@ -330,6 +325,13 @@ jobs:
           for checksums in release-assets/*SHA256SUMS; do
             sed -i '/-symbols\./d' "$checksums"
           done
+          # Collect the upload list after the symbol cleanup, otherwise gh
+          # receives paths deleted above and "no matches found" aborts the job.
+          assets=(release-assets/*)
+          if (( ${#assets[@]} == 0 )); then
+            echo 'No platform packages completed successfully.'
+            exit 0
+          fi
           response="$(mktemp)"
           status="$(curl --silent --show-error --output "$response" --write-out '%{http_code}' \
             -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' \
